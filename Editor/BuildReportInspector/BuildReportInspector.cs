@@ -32,7 +32,7 @@ public class BuildReportInspector : Editor {
     BuildReport report {
         get
         {
-            return target as BuildReport;             ;
+            return target as BuildReport;
         }
     }
 
