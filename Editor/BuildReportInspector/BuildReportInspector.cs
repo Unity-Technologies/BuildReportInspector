@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -47,7 +47,7 @@ public class BuildReportInspector : Editor {
         }
     }
 
-    Texture2D MakeColorTexture(Color col)
+    static Texture2D MakeColorTexture(Color col)
     {
         Color[] pix = new Color[1];
         pix[0] = col;
@@ -60,7 +60,7 @@ public class BuildReportInspector : Editor {
     }
 
     static GUIStyle s_OddStyle;
-    GUIStyle OddStyle
+    static GUIStyle OddStyle
     {
         get
         {
@@ -74,7 +74,7 @@ public class BuildReportInspector : Editor {
     }
 
     static GUIStyle s_EvenStyle;
-    GUIStyle EvenStyle
+    static GUIStyle EvenStyle
     {
         get
         {
@@ -175,58 +175,158 @@ public class BuildReportInspector : Editor {
         EditorGUILayout.EndScrollView();
     }
 
-    Dictionary<string, bool> stepsFoldout = new Dictionary<string, bool>();
-    void OnBuildStepGUI()
-    {
-        var oldBackColor = GUI.backgroundColor;
-        bool odd = false;
-        foreach (var step in report.steps)
-        {
-            odd = !odd;
-            GUILayout.BeginVertical(odd? OddStyle : EvenStyle);
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(10);
+    static List<LogType> ErrorLogTypes = new List<LogType> { LogType.Error, LogType.Assert, LogType.Exception };
 
-            if (!stepsFoldout.ContainsKey(step.name))
-                stepsFoldout[step.name] = false;
-            if (step.messages.Any())
-                stepsFoldout[step.name] = EditorGUILayout.Foldout(stepsFoldout[step.name], step.name);
+    static LogType WorseLogType(LogType log1, LogType log2)
+    {
+        if (ErrorLogTypes.Contains(log1) || ErrorLogTypes.Contains(log2))
+            return LogType.Error;
+        if (log1 == LogType.Warning || log2 == LogType.Warning)
+            return LogType.Warning;
+        return LogType.Log;
+    }
+
+    class BuildStepNode
+    {
+        public BuildStep? step;
+        public int depth;
+        public List<BuildStepNode> children;
+        public LogType worstChildrenLogType;
+        public bool foldoutState;
+
+        public BuildStepNode(BuildStep? _step, int _depth)
+        {
+            step = _step;
+            depth = _depth;
+            children = new List<BuildStepNode>();
+
+            worstChildrenLogType = LogType.Log;
+            if(step.HasValue)
+            {
+                foreach (var message in step.Value.messages)
+                {
+                    worstChildrenLogType = message.type; // Warning
+                    if (ErrorLogTypes.Contains(message.type))
+                        break; // Error
+                }
+            }
+
+            foldoutState = false;
+        }
+
+        public void UpdateWorstChildrenLogType()
+        {
+            foreach(var child in children)
+            {
+                child.UpdateWorstChildrenLogType();
+                worstChildrenLogType = WorseLogType(worstChildrenLogType, child.worstChildrenLogType);
+            }
+        }
+
+        public void LayoutGUI(ref bool switchBackgroundColor, float indentPixels)
+        {
+            switchBackgroundColor = !switchBackgroundColor;
+            GUILayout.BeginVertical(switchBackgroundColor ? OddStyle : EvenStyle);
+            GUILayout.BeginHorizontal();                
+            GUILayout.Space(10 + indentPixels);
+
+            if (children.Any() || (step.HasValue && step.Value.messages.Any()))
+            {
+                if (worstChildrenLogType != LogType.Log)
+                {
+                    var icon = "console.warnicon.sml";
+                    if (worstChildrenLogType != LogType.Warning)
+                        icon = icon = "console.erroricon.sml";
+                    foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step?.name, icon));
+                }
+                else
+                {
+                    foldoutState = EditorGUILayout.Foldout(foldoutState, step?.name);
+                }
+            }
             else
-                GUILayout.Label(step.name);
+                GUILayout.Label(step?.name);
 
             GUILayout.FlexibleSpace();
-
-            GUILayout.Label(step.duration.Hours + ":" + step.duration.Minutes.ToString("D2") + ":" + step.duration.Seconds.ToString("D2") + "." + step.duration.Milliseconds.ToString("D3"));
+            GUILayout.Label(step?.duration.Hours + ":" + step?.duration.Minutes.ToString("D2") + ":" + step?.duration.Seconds.ToString("D2") + "." + step?.duration.Milliseconds.ToString("D3"));
             GUILayout.EndHorizontal();
 
-            if (stepsFoldout[step.name])
+            if (foldoutState)
             {
-                foreach (var message in step.messages)
+                if (step.HasValue)
                 {
-                    var icon = "console.infoicon.sml";
-                    var oldCol = GUI.color;
-                    switch (message.type)
+                    foreach (var message in step.Value.messages)
                     {
-                        case LogType.Warning:
-                            GUI.color = Color.yellow;
-                            icon = "console.warnicon.sml";
-                            break;
-                        case LogType.Error:
-                        case LogType.Exception:
-                        case LogType.Assert:
-                            GUI.color = Color.red;
-                            icon = "console.erroricon.sml";
-                            break;
+                        var icon = "console.infoicon.sml";
+                        var oldCol = GUI.color;
+                        switch (message.type)
+                        {
+                            case LogType.Warning:
+                                GUI.color = Color.yellow;
+                                icon = "console.warnicon.sml";
+                                break;
+                            case LogType.Error:
+                            case LogType.Exception:
+                            case LogType.Assert:
+                                GUI.color = Color.red;
+                                icon = "console.erroricon.sml";
+                                break;
+                        }
+                        GUILayout.BeginHorizontal();
+                        {
+                            GUILayout.Space(20 + indentPixels);
+                            GUILayout.Label(EditorGUIUtility.IconContent(icon), GUILayout.ExpandWidth(false));
+                            EditorGUILayout.LabelField(new GUIContent(message.content, message.content));
+                        }
+                        GUILayout.EndHorizontal();
+                        GUI.color = oldCol;
                     }
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(EditorGUIUtility.IconContent(icon), GUILayout.ExpandWidth(false));
-                    EditorGUILayout.LabelField(new GUIContent(message.content, message.content));
-                    GUILayout.EndHorizontal();
-                    GUI.color = oldCol;
                 }
+
+                foreach (var child in children)
+                    child.LayoutGUI(ref switchBackgroundColor, indentPixels + 20);
             }
             GUILayout.EndVertical();
         }
+    }
+    BuildStepNode rootStepNode = new BuildStepNode(null, -1);
+
+    void OnBuildStepGUI()
+    {
+        if(!rootStepNode.children.Any())
+        {
+            // re-create steps hierarchy
+            Stack<BuildStepNode> branch = new Stack<BuildStepNode>();
+            branch.Push(rootStepNode);
+            foreach (var step in report.steps)
+            {
+                while (branch.Peek().depth >= step.depth)
+                {
+                    branch.Pop();
+                }
+
+                while (branch.Peek().depth < (step.depth - 1))
+                {
+                    var intermediateNode = new BuildStepNode(null, branch.Count - 1);
+                    branch.Peek().children.Add(intermediateNode);
+                    branch.Push(intermediateNode);
+                }
+
+                var stepNode = new BuildStepNode(step, step.depth);
+                branch.Peek().children.Add(stepNode);
+                branch.Push(stepNode);
+            }
+
+            rootStepNode.UpdateWorstChildrenLogType();
+
+            // expand first step, usually "Build player"
+            if (rootStepNode.children.Any())
+                rootStepNode.children[0].foldoutState = true;
+        }
+
+        bool odd = false;
+        foreach(var stepNode in rootStepNode.children)
+            stepNode.LayoutGUI(ref odd, 0);
     }
 
     string FormatSize(ulong size)
