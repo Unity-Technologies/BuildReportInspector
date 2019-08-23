@@ -148,7 +148,7 @@ public class BuildReportInspector : Editor {
         EditorGUILayout.LabelField("    Build Name : ", Application.productName);
         EditorGUILayout.LabelField("    Platform : ", report.summary.platform.ToString());
         EditorGUILayout.LabelField("    Total Time : ", FormatTime(report.summary.totalTime));
-        EditorGUILayout.LabelField("    Total Size : ", FormatSize((int)report.summary.totalSize));
+        EditorGUILayout.LabelField("    Total Size : ", FormatSize(report.summary.totalSize));
         EditorGUILayout.LabelField("    Build Result : ", report.summary.result.ToString());
 
         mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
@@ -229,7 +229,7 @@ public class BuildReportInspector : Editor {
         }
     }
 
-    string FormatSize(int size)
+    string FormatSize(ulong size)
     {
         if (size < 1024)
             return size + " B";
@@ -268,7 +268,7 @@ public class BuildReportInspector : Editor {
                 GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
                 if (GUILayout.Button(new GUIContent(Path.GetFileName(entry.path), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
                     EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
-                GUILayout.Label(FormatSize(entry.size), sizeStyle);
+                GUILayout.Label(FormatSize((ulong)entry.size), sizeStyle);
                 GUILayout.EndHorizontal();
             }
             else
@@ -371,7 +371,7 @@ public class BuildReportInspector : Editor {
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(10);
                         assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                        GUILayout.Label(FormatSize(outputFile.Value), sizeStyle);
+                        GUILayout.Label(FormatSize((ulong)outputFile.Value), sizeStyle);
                         GUILayout.EndHorizontal();
 
                         vPos += kLineHeight;
@@ -389,7 +389,7 @@ public class BuildReportInspector : Editor {
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(10);
                         assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                        GUILayout.Label(FormatSize(outputFile.Value), sizeStyle);
+                        GUILayout.Label(FormatSize((ulong)outputFile.Value), sizeStyle);
                         GUILayout.EndHorizontal();
 
                         vPos += kLineHeight;
@@ -430,7 +430,7 @@ public class BuildReportInspector : Editor {
             odd = !odd;
             GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
             GUILayout.Label(file.role);
-            GUILayout.Label(FormatSize((int)file.size), sizeStyle);
+            GUILayout.Label(FormatSize(file.size), sizeStyle);
             GUILayout.EndHorizontal();
 
         }
@@ -494,7 +494,7 @@ public class BuildReportInspector : Editor {
         GUILayout.FlexibleSpace();
 
         if (strippingSizes.ContainsKey(entity) && strippingSizes[entity] != 0)
-            GUILayout.Label(FormatSize(strippingSizes[entity]), sizeStyle, GUILayout.Width(100));
+            GUILayout.Label(FormatSize((ulong)strippingSizes[entity]), sizeStyle, GUILayout.Width(100));
 
         GUILayout.EndHorizontal();
 
