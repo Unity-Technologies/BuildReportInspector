@@ -29,7 +29,7 @@ Once open in the inspector, you can chose what data to view using the popup menu
 ### Build steps
 The different steps involved in making you build, how long they took, and what messages were printed during those steps (if any).  
 
-![BuildSteps](Screenshots/BuildSteps.jpg)
+<img src="Screenshots/BuildSteps.jpg" width="600">
 
 ### Source assets
 A list of all assets which are used in the build, and how much they contribute to your build size  
