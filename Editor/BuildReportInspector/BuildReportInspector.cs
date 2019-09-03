@@ -109,6 +109,7 @@ public class BuildReportInspector : Editor {
         SourceAssets,
         OutputFiles,
         Stripping,
+        ScenesUsingAssets,
     };
 
     string[] ReportDisplayModeStrings = {
@@ -116,6 +117,7 @@ public class BuildReportInspector : Editor {
         "SourceAssets",
         "OutputFiles",
         "Stripping",
+        "ScenesUsingAssets",
     };
 
     enum SourceAssetsDisplayMode
@@ -170,6 +172,9 @@ public class BuildReportInspector : Editor {
                 break;
             case ReportDisplayMode.Stripping:
                 OnStrippingGUI();
+                break;
+            case ReportDisplayMode.ScenesUsingAssets:
+                OnScenesUsingAssetsGUI();
                 break;
         }
         EditorGUILayout.EndScrollView();
@@ -643,6 +648,56 @@ public class BuildReportInspector : Editor {
         foreach (var module in report.strippingInfo.includedModules)
         {
             StrippingEntityGUI(module, ref odd);
+        }
+    }
+
+    class ScenesUsingAssetGUI
+    {
+        public string assetPath;
+        public string[] scenePaths;
+        public bool foldoutState;
+    }
+    List<ScenesUsingAssetGUI> scenesUsingAssetGUIs = new List<ScenesUsingAssetGUI>();
+
+    void OnScenesUsingAssetsGUI()
+    {
+        if (report.scenesUsingAssets == null || report.scenesUsingAssets.Length==0 || report.scenesUsingAssets[0] == null || report.scenesUsingAssets[0].list==null || report.scenesUsingAssets[0].list.Length==0 )
+        {
+            EditorGUILayout.HelpBox("No info about which scenes are using assets in the build. Did you use BuildOptions.DetailedBuildReport?", MessageType.Info);
+            return;
+        }
+
+        // re-create list of scenes using assets
+        if(!scenesUsingAssetGUIs.Any())
+        {
+            foreach (var scenesUsingAsset in report.scenesUsingAssets[0].list)
+                scenesUsingAssetGUIs.Add(new ScenesUsingAssetGUI { assetPath = scenesUsingAsset.assetPath, scenePaths = scenesUsingAsset.scenePaths, foldoutState = true});
+        }
+
+        bool odd = true;
+        foreach (var scenesUsingAssetGUI in scenesUsingAssetGUIs)
+        {
+            odd = !odd;
+            GUILayout.BeginVertical(odd ? OddStyle : EvenStyle);
+
+            GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+            GUILayout.Space(10);
+            scenesUsingAssetGUI.foldoutState = EditorGUILayout.Foldout(scenesUsingAssetGUI.foldoutState, scenesUsingAssetGUI.assetPath);
+            GUILayout.EndHorizontal();
+
+            if(scenesUsingAssetGUI.foldoutState)
+            {
+                foreach (var scenePath in scenesUsingAssetGUI.scenePaths)
+                {
+                    odd = !odd;
+                    GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                    GUILayout.Space(20);
+                    GUILayout.Label(scenePath);
+                    GUILayout.EndHorizontal();
+                }
+            }
+            
+            GUILayout.EndVertical();
         }
     }
 }

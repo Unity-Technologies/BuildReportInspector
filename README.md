@@ -45,3 +45,8 @@ A list of all files written by the build
 For platforms which support engine code stripping, a list of all engine modules added to the build, and what caused them to be included in the build.  
 
 ![Stripping](Screenshots/Stripping.jpg)
+
+### Scenes using Assets
+When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
+
+<img src="Screenshots/ScenesUsingAssets.jpg" width="400">
