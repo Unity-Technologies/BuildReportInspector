@@ -109,6 +109,9 @@ public class BuildReportInspector : Editor {
         SourceAssets,
         OutputFiles,
         Stripping,
+#if UNITY_2020_1_OR_NEWER
+        ScenesUsingAssets,
+#endif
     };
 
     string[] ReportDisplayModeStrings = {
@@ -116,6 +119,9 @@ public class BuildReportInspector : Editor {
         "SourceAssets",
         "OutputFiles",
         "Stripping",
+#if UNITY_2020_1_OR_NEWER
+        "ScenesUsingAssets",
+#endif
     };
 
     enum SourceAssetsDisplayMode
@@ -171,6 +177,11 @@ public class BuildReportInspector : Editor {
             case ReportDisplayMode.Stripping:
                 OnStrippingGUI();
                 break;
+#if UNITY_2020_1_OR_NEWER
+            case ReportDisplayMode.ScenesUsingAssets:
+                OnScenesUsingAssetsGUI();
+                break;
+#endif
         }
         EditorGUILayout.EndScrollView();
     }
@@ -645,4 +656,56 @@ public class BuildReportInspector : Editor {
             StrippingEntityGUI(module, ref odd);
         }
     }
+
+#if UNITY_2020_1_OR_NEWER
+    class ScenesUsingAssetGUI
+    {
+        public string assetPath;
+        public string[] scenePaths;
+        public bool foldoutState;
+    }
+    List<ScenesUsingAssetGUI> scenesUsingAssetGUIs = new List<ScenesUsingAssetGUI>();
+
+    void OnScenesUsingAssetsGUI()
+    {
+        if (report.scenesUsingAssets == null || report.scenesUsingAssets.Length==0 || report.scenesUsingAssets[0] == null || report.scenesUsingAssets[0].list==null || report.scenesUsingAssets[0].list.Length==0 )
+        {
+            EditorGUILayout.HelpBox("No info about which scenes are using assets in the build. Did you use BuildOptions.DetailedBuildReport?", MessageType.Info);
+            return;
+        }
+
+        // re-create list of scenes using assets
+        if(!scenesUsingAssetGUIs.Any())
+        {
+            foreach (var scenesUsingAsset in report.scenesUsingAssets[0].list)
+                scenesUsingAssetGUIs.Add(new ScenesUsingAssetGUI { assetPath = scenesUsingAsset.assetPath, scenePaths = scenesUsingAsset.scenePaths, foldoutState = true});
+        }
+
+        bool odd = true;
+        foreach (var scenesUsingAssetGUI in scenesUsingAssetGUIs)
+        {
+            odd = !odd;
+            GUILayout.BeginVertical(odd ? OddStyle : EvenStyle);
+
+            GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+            GUILayout.Space(10);
+            scenesUsingAssetGUI.foldoutState = EditorGUILayout.Foldout(scenesUsingAssetGUI.foldoutState, scenesUsingAssetGUI.assetPath);
+            GUILayout.EndHorizontal();
+
+            if(scenesUsingAssetGUI.foldoutState)
+            {
+                foreach (var scenePath in scenesUsingAssetGUI.scenePaths)
+                {
+                    odd = !odd;
+                    GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                    GUILayout.Space(20);
+                    GUILayout.Label(scenePath);
+                    GUILayout.EndHorizontal();
+                }
+            }
+            
+            GUILayout.EndVertical();
+        }
+    }
+#endif // UNITY_2020_1_OR_NEWER
 }
