@@ -47,6 +47,7 @@ For platforms which support engine code stripping, a list of all engine modules 
 ![Stripping](Screenshots/Stripping.jpg)
 
 ### Scenes using Assets
+[Available from Unity 2020.1.0a6]  
 When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
 <img src="Screenshots/ScenesUsingAssets.jpg" width="400">

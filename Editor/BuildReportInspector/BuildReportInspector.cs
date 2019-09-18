@@ -109,7 +109,9 @@ public class BuildReportInspector : Editor {
         SourceAssets,
         OutputFiles,
         Stripping,
+#if UNITY_2020_1_OR_NEWER
         ScenesUsingAssets,
+#endif
     };
 
     string[] ReportDisplayModeStrings = {
@@ -117,7 +119,9 @@ public class BuildReportInspector : Editor {
         "SourceAssets",
         "OutputFiles",
         "Stripping",
+#if UNITY_2020_1_OR_NEWER
         "ScenesUsingAssets",
+#endif
     };
 
     enum SourceAssetsDisplayMode
@@ -173,9 +177,11 @@ public class BuildReportInspector : Editor {
             case ReportDisplayMode.Stripping:
                 OnStrippingGUI();
                 break;
+#if UNITY_2020_1_OR_NEWER
             case ReportDisplayMode.ScenesUsingAssets:
                 OnScenesUsingAssetsGUI();
                 break;
+#endif
         }
         EditorGUILayout.EndScrollView();
     }
@@ -651,6 +657,7 @@ public class BuildReportInspector : Editor {
         }
     }
 
+#if UNITY_2020_1_OR_NEWER
     class ScenesUsingAssetGUI
     {
         public string assetPath;
@@ -700,4 +707,5 @@ public class BuildReportInspector : Editor {
             GUILayout.EndVertical();
         }
     }
+#endif // UNITY_2020_1_OR_NEWER
 }
