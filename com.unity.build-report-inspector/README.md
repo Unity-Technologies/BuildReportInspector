@@ -1,7 +1,7 @@
 Build Report Inspector for Unity
 ================================
 
-This repository contains an Editor script which implements an inspector for the BuildReport class added in Unity 18.1.  
+This package contains an Editor script which implements an inspector for the BuildReport class added in Unity 18.1.  
 The BuildReport class lets you access information about your last build, and helps you profile the time spent building your project and the builds disk size footprint. This information may help you improving your build times and build sizes.  
 This script allows you to inspect this information graphically in the Editor UI, making it more easily accessible than the script APIs would.  
 
@@ -29,25 +29,25 @@ Once open in the inspector, you can chose what data to view using the popup menu
 ### Build steps
 The different steps involved in making you build, how long they took, and what messages were printed during those steps (if any).  
 
-<img src="Screenshots/BuildSteps.jpg" width="600">
+<img src="Documentation~/images/BuildSteps.jpg" width="600">
 
 ### Source assets
 A list of all assets which are used in the build, and how much they contribute to your build size  
 
-![SourceAssets](Screenshots/SourceAssets.jpg)
+![SourceAssets](Documentation~/images/SourceAssets.jpg)
 
 ### Output files
 A list of all files written by the build  
 
-![OutputFiles](Screenshots/OutputFiles.jpg)
+![OutputFiles](Documentation~/images/OutputFiles.jpg)
 
 ### Stripping
 For platforms which support engine code stripping, a list of all engine modules added to the build, and what caused them to be included in the build.  
 
-![Stripping](Screenshots/Stripping.jpg)
+![Stripping](Documentation~/images/Stripping.jpg)
 
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]  
 When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
-<img src="Screenshots/ScenesUsingAssets.jpg" width="400">
+<img src="Documentation~/images/ScenesUsingAssets.jpg" width="400">
