@@ -136,11 +136,14 @@ public class BuildReportInspector : Editor {
 
     Vector2 scrollPosition;
 
-    public static string FormatTime(System.TimeSpan t)
+    static string FormatTime(System.TimeSpan t)
     {
         return t.Hours + ":" + t.Minutes.ToString("D2") + ":" + t.Seconds.ToString("D2") + "." + t.Milliseconds.ToString("D3");
     }
 
+    /// <summary>
+    /// Custom inspector implementation for BuildReport objects
+    /// </summary>
     public override void OnInspectorGUI()
     {
         if (report == null)
@@ -629,7 +632,7 @@ public class BuildReportInspector : Editor {
 
         var so = new SerializedObject(report.strippingInfo);
         var serializedDependencies = so.FindProperty("serializedDependencies");
-        var hasSizes = false;
+        //var hasSizes = false;
         if (serializedDependencies != null)
         {
             for (int i = 0; i < serializedDependencies.arraySize; i++)
@@ -638,8 +641,8 @@ public class BuildReportInspector : Editor {
                 var depKey = sp.FindPropertyRelative("key").stringValue;
                 strippingIcons[depKey] = StrippingEntityIcon(sp.FindPropertyRelative("icon").stringValue);
                 strippingSizes[depKey] = sp.FindPropertyRelative("size").intValue;
-                if (strippingSizes[depKey] != 0)
-                    hasSizes = true;
+                //if (strippingSizes[depKey] != 0)
+                //    hasSizes = true;
             }
         }
 

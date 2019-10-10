@@ -63,29 +63,29 @@ Once open in the inspector, you can chose what data to view using the popup menu
 ### Build steps
 The different steps involved in making you build, how long they took, and what messages were printed during those steps (if any).  
 
-<img src="images/BuildSteps.jpg" width="600">
+<img src="images/BuildSteps.png" width="600">
 
 <a name="SourceAssets"></a>
 ### Source assets
 A list of all assets which are used in the build, and how much they contribute to your build size  
 
-![SourceAssets](images/SourceAssets.jpg)
+![SourceAssets](images/SourceAssets.png)
 
 <a name="OutputFiles"></a>
 ### Output files
 A list of all files written by the build  
 
-![OutputFiles](images/OutputFiles.jpg)
+![OutputFiles](images/OutputFiles.png)
 
 <a name="Stripping"></a>
 ### Stripping
 For platforms which support engine code stripping, a list of all engine modules added to the build, and what caused them to be included in the build.  
 
-![Stripping](images/Stripping.jpg)
+![Stripping](images/Stripping.png)
 
 <a name="ScenesUsingAssets"></a>
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]  
 When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
-<img src="images/ScenesUsingAssets.jpg" width="400">
+<img src="images/ScenesUsingAssets.png" width="400">
