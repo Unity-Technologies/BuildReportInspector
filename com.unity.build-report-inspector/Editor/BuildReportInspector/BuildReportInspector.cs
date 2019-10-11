@@ -6,6 +6,9 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using System.IO;
 
+/// <summary>
+/// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
+/// </summary>
 [CustomEditor(typeof(BuildReport))]
 public class BuildReportInspector : Editor {
 
@@ -142,7 +145,7 @@ public class BuildReportInspector : Editor {
     }
 
     /// <summary>
-    /// Custom inspector implementation for BuildReport objects
+    /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
     /// </summary>
     public override void OnInspectorGUI()
     {
