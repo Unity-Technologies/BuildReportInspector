@@ -18,7 +18,7 @@ This package uses the SerializedObject class to access some of those internals t
 Usage
 =====
 
-Add the [BuildReportInspector.cs](com.unity.build-report-inspector/Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it. Once installed, BuildReport objects can be viewed in the inspector.
+Add the [BuildReportInspector.cs](Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it. Once installed, BuildReport objects can be viewed in the inspector.
 
 You can obtain a BuildReport object as the return value of the BuildPlayer API (https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) when making a build, or by selecting a file containing BuildReport data.  
 Unity's default build setup will write such a file to **Library/LastBuild.buildreport** (this may change in the future) when making a build. 
@@ -29,25 +29,25 @@ Once open in the inspector, you can chose what data to view using the popup menu
 ### Build steps
 The different steps involved in making you build, how long they took, and what messages were printed during those steps (if any).  
 
-<img src="com.unity.build-report-inspector/Documentation~/images/BuildSteps.png" width="600">
+<img src="Documentation~/images/BuildSteps.png" width="600">
 
 ### Source assets
 A list of all assets which are used in the build, and how much they contribute to your build size  
 
-![SourceAssets](com.unity.build-report-inspector/Documentation~/images/SourceAssets.png)
+![SourceAssets](Documentation~/images/SourceAssets.png)
 
 ### Output files
 A list of all files written by the build  
 
-![OutputFiles](com.unity.build-report-inspector/Documentation~/images/OutputFiles.png)
+![OutputFiles](Documentation~/images/OutputFiles.png)
 
 ### Stripping
 For platforms which support engine code stripping, a list of all engine modules added to the build, and what caused them to be included in the build.  
 
-![Stripping](com.unity.build-report-inspector/Documentation~/images/Stripping.png)
+![Stripping](Documentation~/images/Stripping.png)
 
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]  
 When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
-<img src="com.unity.build-report-inspector/Documentation~/images/ScenesUsingAssets.png" width="400">
+<img src="Documentation~/images/ScenesUsingAssets.png" width="400">

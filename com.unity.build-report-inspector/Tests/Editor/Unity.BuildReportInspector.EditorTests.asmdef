@@ -1,0 +1,13 @@
+{
+    "name": "Unity.BuildReportInspector.EditorTests",
+    "references": [
+        "Unity.BuildReportInspector.Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}
