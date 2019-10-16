@@ -1,5 +1,6 @@
 test_editors:
   - version: 2019.1
+  - version: 2019.2
   - version: trunk
 test_platforms:
   - name: win
@@ -19,11 +20,11 @@ pack:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package pack
+    - upm-ci project pack
   artifacts:
     packages:
       paths:
-        - "upm-ci~/**/*"
+        - "upm-ci~/packages/**/*"
 
 {% for editor in test_editors %}
 {% for platform in test_platforms %}
@@ -35,7 +36,7 @@ test_{{ platform.name }}_{{ editor.version }}:
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package test --unity-version {{ editor.version }}
+    - upm-ci project test -u {{ editor.version }}
   artifacts:
     logs:
       paths:
@@ -54,10 +55,6 @@ test_trigger:
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
     - upm-ci package izon -t
-  triggers:
-    branches:
-      only:
-        - "/.*/"
   artifacts:
     logs:
       paths:
@@ -81,7 +78,7 @@ publish:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package publish
+    - upm-ci project publish
   triggers:
     tags:
       only:
