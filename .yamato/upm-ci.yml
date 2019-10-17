@@ -1,17 +1,17 @@
-test_editors:
-  - version: 2019.1
-  - version: 2019.2
-  - version: trunk
-test_platforms:
-  - name: win
-    type: Unity::VM
-    image: package-ci/win10:stable
-    flavor: b1.large
-  - name: mac
-    type: Unity::VM::osx
-    image: buildfarm/mac:stable
-    flavor: m1.mac
----
+#test_editors:
+#  - version: 2019.1
+#  - version: 2019.2
+#  - version: trunk
+#test_platforms:
+#  - name: win
+#    type: Unity::VM
+#    image: package-ci/win10:stable
+#    flavor: b1.large
+#  - name: mac
+#    type: Unity::VM::osx
+#    image: buildfarm/mac:stable
+#    flavor: m1.mac
+#---
 pack:
   name: Pack
   agent:
@@ -20,31 +20,46 @@ pack:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci project pack
+    - upm-ci package pack --package-path com.unity.build-report-inspector
   artifacts:
     packages:
       paths:
         - "upm-ci~/packages/**/*"
 
-{% for editor in test_editors %}
-{% for platform in test_platforms %}
-test_{{ platform.name }}_{{ editor.version }}:
-  name : Test {{ editor.version }} on {{ platform.name }}
+#{% for editor in test_editors %}
+#{% for platform in test_platforms %}
+#test_{{ platform.name }}_{{ editor.version }}:
+#  name : Test {{ editor.version }} on {{ platform.name }}
+#  agent:
+#    type: {{ platform.type }}
+#    image: {{ platform.image }}
+#    flavor: {{ platform.flavor}}
+#  commands:
+#    - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
+#    - upm-ci project test -u {{ editor.version }}
+#  artifacts:
+#    logs:
+#      paths:
+#        - "upm-ci~/test-results/**/*"
+#  dependencies:
+#    - .yamato/upm-ci.yml#pack
+#{% endfor %}
+#{% endfor %}
+
+test_simple:
+  name : Simple Test (Win10 x trunk)
   agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor}}
+    type: Unity::VM
+    image: package-ci/win10:stable
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci project test -u {{ editor.version }}
+    - upm-ci package test --package-path=com.unity.build-report-inspector -u trunk
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/upm-ci.yml#pack
-{% endfor %}
-{% endfor %}
+    - .yamato/upm-ci.yml#pack    
 
 test_trigger:
   name: Tests Trigger
@@ -63,13 +78,14 @@ test_trigger:
       paths:
         - "upm-ci~/packages/**/*"
   dependencies:
-    - .yamato/upm-ci.yml#pack
-    {% for editor in test_editors %}
-    {% for platform in test_platforms %}
-    - .yamato/upm-ci.yml#test_{{platform.name}}_{{editor.version}}
-    {% endfor %}
-    {% endfor %}
-
+    - .yamato/upm-ci.yml#pack    
+#    {% for editor in test_editors %}
+#    {% for platform in test_platforms %}
+#    - .yamato/upm-ci.yml#test_{{platform.name}}_{{editor.version}}
+#    {% endfor %}
+#    {% endfor %}
+    - .yamato/upm-ci.yml#test_simple
+    
 publish:
   name: Publish to Internal Registry
   agent:
@@ -78,7 +94,7 @@ publish:
     flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci project publish
+    - upm-ci package publish --package-path=com.unity.build-report-inspector
   triggers:
     tags:
       only:
@@ -89,8 +105,9 @@ publish:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/upm-ci.yml#pack
-    {% for editor in test_editors %}
-    {% for platform in test_platforms %}
-    - .yamato/upm-ci.yml#test_{{ platform.name }}_{{ editor.version }}
-    {% endfor %}
-    {% endfor %}
+#    {% for editor in test_editors %}
+#    {% for platform in test_platforms %}
+#    - .yamato/upm-ci.yml#test_{{ platform.name }}_{{ editor.version }}
+#    {% endfor %}
+#    {% endfor %}
+    - .yamato/upm-ci.yml#test_simple
