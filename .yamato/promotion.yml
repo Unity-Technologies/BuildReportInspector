@@ -1,5 +1,6 @@
 test_editors:
   - version: 2019.1
+  - version: trunk  
 test_platforms:
   - name: win
     type: Unity::VM
@@ -18,7 +19,7 @@ promotion_test_{{ platform.name }}_{{ editor.version }}:
     UPMCI_PROMOTION: 1
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package test --unity-version {{ editor.version }}
+    - upm-ci package test --unity-version {{ editor.version }} --package-path=com.unity.build-report-inspector
   artifacts:
     logs:
       paths:
@@ -58,7 +59,7 @@ promote:
     UPMCI_PROMOTION: 1
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
-    - upm-ci package promote
+    - upm-ci package promote --package-path=com.unity.build-report-inspector
   triggers:
     tags:
       only:
