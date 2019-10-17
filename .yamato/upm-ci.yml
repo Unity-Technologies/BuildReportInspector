@@ -11,7 +11,7 @@
 #    type: Unity::VM::osx
 #    image: buildfarm/mac:stable
 #    flavor: m1.mac
-#---
+---
 pack:
   name: Pack
   agent:
@@ -51,6 +51,7 @@ test_simple:
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
+    flavor: b1.large
   commands:
     - npm install upm-ci-utils@stable -g --registry https://api.bintray.com/npm/unity/unity-npm
     - upm-ci package test --package-path=com.unity.build-report-inspector -u trunk
