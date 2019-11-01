@@ -18,7 +18,9 @@ This package uses the SerializedObject class to access some of those internals t
 Usage
 =====
 
-Add the [BuildReportInspector.cs](Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it. Once installed, BuildReport objects can be viewed in the inspector.
+Add the [BuildReportInspector.cs](Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it.  
+Alternatively, install it from Unity Editor's Package Manager window (check "Show preview packages" in the "Advanced" menu to have "Build Report Inspector" displayed in the list of available packages).  
+Once installed, BuildReport objects can be viewed in the inspector.
 
 You can obtain a BuildReport object as the return value of the BuildPlayer API (https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) when making a build, or by selecting a file containing BuildReport data.  
 Unity's default build setup will write such a file to **Library/LastBuild.buildreport** (this may change in the future) when making a build. 
