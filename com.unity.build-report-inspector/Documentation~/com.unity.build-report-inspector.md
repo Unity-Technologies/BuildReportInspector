@@ -43,7 +43,6 @@ This version of Build Report Inspector is compatible with the following versions
 
 * 2018.1 and later (recommended)
 
-
 ---
 
 <a name="UsingBuildReportInspector"></a>
@@ -89,3 +88,10 @@ For platforms which support engine code stripping, a list of all engine modules 
 When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
 <img src="images/ScenesUsingAssets.png" width="400">
+
+---
+
+# Contributing
+
+The source for Build Report Inspector package is available at https://github.com/Unity-Technologies/BuildReportInspector  
+For contributions, please refer to the repository's [CONTRIBUTING.md](https://github.com/Unity-Technologies/BuildReportInspector/blob/master/com.unity.build-report-inspector/CONTRIBUTING.md) file.
