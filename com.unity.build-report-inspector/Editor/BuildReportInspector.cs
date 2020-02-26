@@ -414,7 +414,8 @@ namespace Unity.BuildReportInspector
                     GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
 
                     GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
-                    if (GUILayout.Button(new GUIContent(Path.GetFileName(entry.path), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
+                    var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
+                    if (GUILayout.Button(new GUIContent(Path.GetFileName(fileName), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
                         EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
                     GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
                     GUILayout.EndHorizontal();
