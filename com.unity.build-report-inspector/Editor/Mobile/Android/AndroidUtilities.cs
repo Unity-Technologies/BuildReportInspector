@@ -23,7 +23,12 @@ namespace Unity.BuildReportInspector.Mobile.Android
         private static string GetBundleToolPath()
         {
             var editorDir = Directory.GetParent(EditorApplication.applicationPath).FullName;
+            bool exists = Directory.Exists(editorDir);
+#if UNITY_EDITOR_WIN
+            var androidToolPath = Path.Combine(editorDir, "Data", "PlaybackEngines", "AndroidPlayer", "Tools");
+#else
             var androidToolPath = Path.Combine(editorDir, "PlaybackEngines", "AndroidPlayer", "Tools");
+#endif
             var bundleToolName = Directory.EnumerateFiles(androidToolPath, "bundletool*jar").SingleOrDefault();
             if (!string.IsNullOrEmpty(bundleToolName))
                 return bundleToolName;
