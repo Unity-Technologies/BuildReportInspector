@@ -37,7 +37,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 Environment.GetEnvironmentVariable("JAVA_HOME") : 
                 AndroidExternalToolsSettings.jdkRootPath;
 
-            if (Directory.Exists(javaPath))
+            if (string.IsNullOrEmpty(javaPath) || !Directory.Exists(javaPath))
                 throw new DirectoryNotFoundException("Could not resolve Java directory. Please install Java through Unity Hub.");
 
             var javaExecutable = Path.Combine(javaPath, "bin", "java");
