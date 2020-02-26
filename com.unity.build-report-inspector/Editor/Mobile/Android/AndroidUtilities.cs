@@ -214,10 +214,6 @@ namespace Unity.BuildReportInspector.Mobile.Android
 #if UNITY_EDITOR_WIN
             apkAnalyzerPath += ".bat";
 #endif // UNITY_EDITOR_WIN
-            if (!File.Exists(apkAnalyzerPath))
-            {
-                Debug.LogError($"apkanalyzer doesn't exist at: {apkAnalyzerPath}.");
-            }
 
             string apkAnalyzerOutput;
             int exitCode;
