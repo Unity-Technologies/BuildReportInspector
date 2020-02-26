@@ -167,10 +167,17 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
             if (mobileAppendix != null)
             {
-                EditorGUILayout.LabelField("    Download Sizes: ");
-                foreach (var entry in mobileAppendix.Architectures)
+                if (mobileAppendix.Architectures != null)
                 {
-                    EditorGUILayout.LabelField($"            {entry.Name}", FormatSize((ulong)entry.DownloadSize));
+                    EditorGUILayout.LabelField("    Download Sizes: ");
+                    foreach (var entry in mobileAppendix.Architectures)
+                    {
+                        EditorGUILayout.LabelField($"            {entry.Name}", FormatSize((ulong)entry.DownloadSize));
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
                 }
             }
 

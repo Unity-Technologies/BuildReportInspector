@@ -6,3 +6,4 @@ TestProject/*
 !TestProject/ProjectSettings/
 !TestProject/Packages/
 TestProject/ProjectSettings/ProjectVersion.txt
+TestProject/Assets/BuildReports/*

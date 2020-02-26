@@ -57,7 +57,7 @@ namespace Unity.BuildReportInspector.Mobile
         {
             if (!IsBuildValid(applicationPath))
             {
-                Debug.LogError("Couldn't collect report data from application bundle: bundle invalid.");
+                Debug.LogError("Couldn't collect report data from application bundle: build invalid.");
                 return;
             }
 
