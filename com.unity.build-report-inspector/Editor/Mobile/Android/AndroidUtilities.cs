@@ -14,8 +14,8 @@ namespace Unity.BuildReportInspector.Mobile.Android
     {
         private enum ApplicationType
         {
-            APK,
-            AAB
+            Apk,
+            Aab
         }
 
         private static bool IsTestEnvironment => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID"));
@@ -84,10 +84,10 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 var applicationType = GetApplicationType(applicationPath);
                 switch (applicationType)
                 {
-                    case ApplicationType.AAB:
+                    case ApplicationType.Aab:
                         GetAabDownloadSizes(applicationPath, ref architectures);
                         break;
-                    case ApplicationType.APK:
+                    case ApplicationType.Apk:
                         if (GetApkDownloadSize(applicationPath, out var downloadSize))
                         {
                             foreach (var archInfo in architectures)
@@ -125,11 +125,11 @@ namespace Unity.BuildReportInspector.Mobile.Android
             {
                 if (archive.Entries.Any(x => x.FullName == "BundleConfig.pb"))
                 {
-                    return ApplicationType.AAB;
+                    return ApplicationType.Aab;
                 }
                 if (archive.Entries.Any(x => x.FullName == "AndroidManifest.xml"))
                 {
-                    return ApplicationType.APK;
+                    return ApplicationType.Apk;
                 }
                 throw new Exception("Couldn't determine Android build type.");
             }
