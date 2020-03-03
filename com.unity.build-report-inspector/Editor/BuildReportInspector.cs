@@ -180,6 +180,19 @@ namespace Unity.BuildReportInspector
                     EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
                 }
             }
+            else if (report.summary.platform == BuildTarget.iOS)
+            {
+                EditorGUILayout.HelpBox("To get more accurate iOS report data, please provide an .ipa file generated from a " +
+                                        "matching Unity build using the dialog below.", MessageType.Warning);
+                if (GUILayout.Button("Select an iOS .ipa bundle"))
+                {
+                    var ipaPath = EditorUtility.OpenFilePanel("Select an .ipa build.", "", "ipa");
+                    if (!string.IsNullOrEmpty(ipaPath))
+                    {
+                        MobileHelper.GenerateAppleAppendix(ipaPath, report.summary.guid.ToString());
+                    }
+                }
+            }
 
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
 

@@ -5,6 +5,7 @@ using System.Linq;
 using Unity.Mobile.BuildReport.Tools;
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
+using UnityEditor;
 
 namespace Unity.BuildReportInspector.Mobile.Apple
 {

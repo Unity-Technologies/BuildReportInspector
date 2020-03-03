@@ -102,7 +102,7 @@ namespace Unity.BuildReportInspector.Mobile
                     return archive.Entries.Any(x =>
                         x.FullName == "AndroidManifest.xml" ||
                         x.FullName == "BundleConfig.pb" ||
-                        x.Name == "Info.plist");    // TODO: Fix this path
+                        x.Name == "Info.plist" && x.FullName.StartsWith("Payload"));
                 }
             }
             catch

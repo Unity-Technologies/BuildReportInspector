@@ -42,7 +42,7 @@ namespace Unity.BuildReportInspector.Mobile
                 return;
 
             // On Android, generate the mobile appendix right after the build finishes.
-            MobileHelper.GenerateMobileAppendix(applicationPath, s_LastBuildGuid);
+            MobileHelper.GenerateAndroidAppendix(applicationPath, s_LastBuildGuid);
         }
     }
 }
