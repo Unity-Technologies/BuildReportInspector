@@ -7,3 +7,6 @@ TestProject/*
 !TestProject/Packages/
 TestProject/ProjectSettings/ProjectVersion.txt
 TestProject/Assets/BuildReports/*
+
+# macOS meta folders
+*.DS_Store*

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace Unity.BuildReportInspector.Mobile
         internal ExecutableSegments Segments { get; set; }
 
         internal MobileArchInfo() { }
-        
+
         internal MobileArchInfo(string name)
         {
             Name = name;
@@ -63,24 +64,25 @@ namespace Unity.BuildReportInspector.Mobile
 
             // Get the actual size of the app bundle on disk
             BuildSize = new FileInfo(applicationPath).Length;
-            
+
             // Get the list of files inside of the app bundle from the zip header
             using (var archive = ZipFile.OpenRead(applicationPath))
             {
-                Files = new MobileFile[archive.Entries.Count];
-                for (var i = 0; i < archive.Entries.Count; i++)
+                var files = new List<MobileFile>();
+                foreach (var entry in archive.Entries)
                 {
                     // Skip iOS directory meta files
-                    if (archive.Entries[i].Length == 0)
+                    if (entry.Length == 0)
                         continue;
 
-                    Files[i] = new MobileFile(
-                        archive.Entries[i].FullName, 
-                        archive.Entries[i].CompressedLength, 
-                        archive.Entries[i].Length);
+                    files.Add(new MobileFile(
+                        entry.FullName,
+                        entry.CompressedLength,
+                        entry.Length));
                 }
+                Files = files.ToArray();
             }
-            
+
             if (MobileHelper.s_PlatformUtilities == null)
                 return;
 
@@ -100,7 +102,7 @@ namespace Unity.BuildReportInspector.Mobile
                     return archive.Entries.Any(x =>
                         x.FullName == "AndroidManifest.xml" ||
                         x.FullName == "BundleConfig.pb" ||
-                        x.FullName == "Info.plist");
+                        x.Name == "Info.plist");    // TODO: Fix this path
                 }
             }
             catch
