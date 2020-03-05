@@ -303,7 +303,7 @@ namespace Unity.BuildReportInspector
                     {
                         var icon = "console.warnicon.sml";
                         if (worstChildrenLogType != LogType.Warning)
-                            icon = icon = "console.erroricon.sml";
+                            icon = "console.erroricon.sml";
                         foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step?.name, icon));
                     }
                     else
