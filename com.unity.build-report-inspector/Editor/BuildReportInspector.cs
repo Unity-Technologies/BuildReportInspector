@@ -422,21 +422,14 @@ namespace Unity.BuildReportInspector
             var odd = false;
             foreach (var entry in assets.Where(entry => fileFilter == null || fileFilter == entry.outputFile).Where(entry => typeFilter == null || typeFilter == entry.type))
             {
-                if (vPos >= -k_LineHeight && vPos <= Screen.height)
-                {
-                    GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
 
-                    GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
-                    var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
-                    if (GUILayout.Button(new GUIContent(Path.GetFileName(fileName), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
-                        EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
-                    GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
-                    GUILayout.EndHorizontal();
-                }
-                else
-                {
-                    GUILayout.Space(k_LineHeight);
-                }
+                GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
+                var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
+                if (GUILayout.Button(new GUIContent(Path.GetFileName(fileName), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
+                    EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
+                GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
+                GUILayout.EndHorizontal();
                 vPos += k_LineHeight;
                 odd = !odd;
             }
@@ -448,7 +441,7 @@ namespace Unity.BuildReportInspector
         Dictionary<string, int> outputFiles;
         Dictionary<string, int> assetTypes;
 
-
+#if !UNITY_2019_3_OR_NEWER
         private void OnOldAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -513,56 +506,13 @@ namespace Unity.BuildReportInspector
                     outputFiles = outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
                     assetTypes = assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
                 }
-                switch (sourceDispMode)
-                {
-                    case SourceAssetsDisplayMode.Size:
-                        ShowAssets(assets, ref vPos);
-                        break;
-                    case SourceAssetsDisplayMode.OutputDataFiles:
-                        foreach (var outputFile in outputFiles)
-                        {
-                            if (!assetsFoldout.ContainsKey(outputFile.Key))
-                                assetsFoldout[outputFile.Key] = false;
-        
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Space(10);
-                            assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                            GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
-                            GUILayout.EndHorizontal();
-        
-                            vPos += k_LineHeight;
-        
-                            if (assetsFoldout[outputFile.Key])
-                                ShowAssets(assets, ref vPos, outputFile.Key);
-                        }
-                        break;
-                    case SourceAssetsDisplayMode.ImporterType:
-                        foreach (var outputFile in assetTypes)
-                        {
-                            if (!assetsFoldout.ContainsKey(outputFile.Key))
-                                assetsFoldout[outputFile.Key] = false;
-        
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Space(10);
-                            assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                            GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
-                            GUILayout.EndHorizontal();
-        
-                            vPos += k_LineHeight;
-        
-                            if (assetsFoldout[outputFile.Key])
-                                ShowAssets(assets, ref vPos, null, outputFile.Key);
-                        }             
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }                           
+                DisplayAssetsView(vPos);
             }
             else 
                 GUILayout.Label("No Appendices property found");
         }
+#endif // !UNITY_2019_3_OR_NEWER
 
-#if UNITY_2019_3_OR_NEWER
         private void OnAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -601,6 +551,11 @@ namespace Unity.BuildReportInspector
                 outputFiles = outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
                 assetTypes = assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
             }
+            DisplayAssetsView(vPos);
+        }
+
+        private void DisplayAssetsView(float vPos)
+        {
             switch (sourceDispMode)
             {
                 case SourceAssetsDisplayMode.Size:
@@ -646,7 +601,6 @@ namespace Unity.BuildReportInspector
                     throw new ArgumentOutOfRangeException();
             }
         }
-#endif // UNITY_2019_3_OR_NEWER
 
         private void OnOutputFilesGUI()
         {
