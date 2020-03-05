@@ -180,6 +180,7 @@ namespace Unity.BuildReportInspector
                     EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
                 }
             }
+#if UNITY_EDITOR_OSX
             else if (report.summary.platform == BuildTarget.iOS)
             {
                 EditorGUILayout.HelpBox("To get more accurate iOS report data, please provide an .ipa file generated from a " +
@@ -193,7 +194,7 @@ namespace Unity.BuildReportInspector
                     }
                 }
             }
-
+#endif // UNITY_EDITOR_OSX
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
 
             if (mode == ReportDisplayMode.SourceAssets)
