@@ -18,7 +18,7 @@ This package uses the SerializedObject class to access some of those internals t
 Usage
 =====
 
-Add the [BuildReportInspector.cs](com.unity.build-report-inspector/Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it.  
+Add the [BuildReportInspector.cs](com.unity.build-report-inspector/Editor/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it.  
 Alternatively, install it from Unity Editor's Package Manager window (check "Show preview packages" in the "Advanced" menu to have "Build Report Inspector" displayed in the list of available packages).  
 Once installed, BuildReport objects can be viewed in the inspector.
 
