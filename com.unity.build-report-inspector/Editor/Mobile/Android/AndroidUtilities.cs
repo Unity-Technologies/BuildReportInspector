@@ -1,3 +1,4 @@
+#if UNITY_ANDROID
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -265,13 +266,12 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 $"lib\\apkanalyzer.jar;{appHome}\\lib\\shared.jar;{appHome}\\lib\\binary-resources.jar;{appHome}\\lib\\guava-22.0.jar";
             return $"{defaultJvmOpts} -classpath {classPath} com.android.tools.apk.analyzer.ApkAnalyzerCli";
         }
-
-#if UNITY_ANDROID
+        
         [InitializeOnLoadMethod]
         private static void Initialize()
         {
             MobileHelper.RegisterPlatformUtilities(new AndroidUtilities());
         }
-#endif // UNITY_ANDROID
     }
 }
+#endif // UNITY_ANDROID
