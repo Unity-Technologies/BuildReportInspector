@@ -20,8 +20,8 @@ The following table describes the package folder structure:
 
 |**Location**|**Description**|
 |---|---|
-|*Editor/BuildReportInspector*|Contains the script implementing the inspector.|
-|*Editor/BuildReportInspector/BuildReportInspector.cs*|Contains implementation for the inspector.|
+|*Editor*|Contains the script implementing the inspector.|
+|*Editor/BuildReportInspector.cs*|Contains implementation for the inspector.|
 
 <a name="Installation"></a>
 
@@ -85,7 +85,7 @@ For platforms which support engine code stripping, a list of all engine modules 
 <a name="ScenesUsingAssets"></a>
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]  
-When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
+When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
 <img src="images/ScenesUsingAssets.png" width="400">
 

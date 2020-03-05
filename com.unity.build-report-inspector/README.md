@@ -18,7 +18,7 @@ This package uses the SerializedObject class to access some of those internals t
 Usage
 =====
 
-Add the [BuildReportInspector.cs](Editor/BuildReportInspector/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it.  
+Add the [BuildReportInspector.cs](Editor/BuildReportInspector.cs) editor script to an **Editor** folder in your project to install it.  
 Alternatively, install it from Unity Editor's Package Manager window (check "Show preview packages" in the "Advanced" menu to have "Build Report Inspector" displayed in the list of available packages).  
 Once installed, BuildReport objects can be viewed in the inspector.
 
@@ -50,6 +50,6 @@ For platforms which support engine code stripping, a list of all engine modules 
 
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]  
-When BuildOption.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
+When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
 <img src="Documentation~/images/ScenesUsingAssets.png" width="400">
