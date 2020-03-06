@@ -165,36 +165,10 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
-            if (mobileAppendix != null)
-            {
-                if (mobileAppendix.Architectures != null)
-                {
-                    EditorGUILayout.LabelField("    Download Sizes: ");
-                    foreach (var entry in mobileAppendix.Architectures)
-                    {
-                        EditorGUILayout.LabelField($"            {entry.Name}", FormatSize((ulong)entry.DownloadSize));
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
-                }
-            }
-#if UNITY_EDITOR_OSX
-            else if (report.summary.platform == BuildTarget.iOS)
-            {
-                EditorGUILayout.HelpBox("To get more accurate iOS report data, please provide an .ipa file generated from a " +
-                                        "matching Unity build using the dialog below.", MessageType.Warning);
-                if (GUILayout.Button("Select an iOS .ipa bundle"))
-                {
-                    var ipaPath = EditorUtility.OpenFilePanel("Select an .ipa build.", "", "ipa");
-                    if (!string.IsNullOrEmpty(ipaPath))
-                    {
-                        MobileHelper.GenerateAppleAppendix(ipaPath, report.summary.guid.ToString());
-                    }
-                }
-            }
-#endif // UNITY_EDITOR_OSX
+            
+            // Show Mobile appendix data below the build summary
+            OnMobileAppendixGUI();
+
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
 
             if (mode == ReportDisplayMode.SourceAssets)
@@ -357,8 +331,45 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndVertical();
             }
         }
-        BuildStepNode rootStepNode = new BuildStepNode(null, -1);
 
+        private void OnMobileAppendixGUI()
+        {
+            if (mobileAppendix != null)
+            {
+                if (mobileAppendix.Architectures != null)
+                {
+                    EditorGUILayout.LabelField("    Download Sizes: ");
+                    foreach (var entry in mobileAppendix.Architectures)
+                    {
+                        EditorGUILayout.LabelField($"            {entry.Name}", FormatSize((ulong)entry.DownloadSize));
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
+                }
+            }
+#if UNITY_EDITOR_OSX
+            // On macOS, show a help dialog for generating the MobileAppendix for iOS
+            else if (report.summary.platform == BuildTarget.iOS)
+            {
+                EditorGUILayout.HelpBox("To get more accurate iOS report data, please provide an .ipa file generated from a " +
+                                        "matching Unity build using the dialog below.", MessageType.Warning);
+                if (!GUILayout.Button("Select an iOS .ipa bundle"))
+                {
+                    return;
+                }
+                var ipaPath = EditorUtility.OpenFilePanel("Select an .ipa build.", "", "ipa");
+                if (!string.IsNullOrEmpty(ipaPath))
+                {
+                    // If an .ipa is selected, generate the MobileAppendix
+                    MobileHelper.GenerateAppleAppendix(ipaPath, report.summary.guid.ToString());
+                }
+            }
+#endif // UNITY_EDITOR_OSX
+        }
+
+        BuildStepNode rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
         {
             if(!rootStepNode.children.Any())
