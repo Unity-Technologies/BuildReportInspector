@@ -5,15 +5,12 @@ This package contains an Editor script which implements an inspector for the Bui
 The BuildReport class lets you access information about your last build, and helps you profile the time spent building your project and the builds disk size footprint. This information may help you improving your build times and build sizes.  
 This script allows you to inspect this information graphically in the Editor UI, making it more easily accessible than the script APIs would.  
 
-
 Disclaimer
 ==========
 
 This package is provided as-is, with no support from Unity Technologies. We plan to add a built-in and supported UI for the BuildReport feature in a future version of Unity, but until then, this package serves as a demonstration on how you can access the BuildReport information today.
 
-In particular, this package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html), but some information in the BuildReport object is not yet exposed through public APIs.  
-This package uses the SerializedObject class to access some of those internals through Unity's serialization system. Since internal data structures are subject to change, this package may stop working in future versions of Unity.
-
+In particular, this package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html).
 
 Usage
 =====
@@ -53,3 +50,30 @@ For platforms which support engine code stripping, a list of all engine modules 
 When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
 
 <img src="Documentation~/images/ScenesUsingAssets.png" width="400">
+
+### Mobile
+The BuildReport API is not very good at reporting data from mobile builds. For this reason, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS).
+
+<img src="Documentation~/images/MobileAppendix.png" width="400">
+
+#### Android
+The mobile appendix is generated automatically for Android builds, right after Unity exports the application bundle.  
+
+#### iOS
+Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.
+
+<img src="Documentation~/images/MobileiOSPrompt.png" width="400">
+
+To generate a development .ipa bundle:
+
+1. Open the Xcode project exported by Unity.
+2. In the menu bar, go to `Product > Archive`.
+3. Once Xcode finishes archiving, click `Distribute App`.
+4. Select `Development` distribution method, go to next step.
+5. Select desired App Thinning and Bitcode options, go to next step.
+6. Set valid signing credentials and click `Next`.
+7. Once Xcode finishes distributing, click `Export` and select where to save the distributed files.
+
+Once these steps are complete, an .ipa bundle will be inside the directory, saved in step 7.  
+This process can also be automated using the `xcodebuild` command line tool.  
+After the .ipa bundle is provided, the iOS-specific information is added to the BuildReportInspector UI automatically.
