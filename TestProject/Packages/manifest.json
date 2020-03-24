@@ -1,0 +1,6 @@
+{
+  "disableProjectUpdate": true,
+  "dependencies": {
+  	"com.unity.build-report-inspector": "file:../../com.unity.build-report-inspector"
+  }
+}

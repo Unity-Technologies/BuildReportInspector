@@ -1,7 +1,0 @@
-{
-    "name": "Unity.BuildReportInspector.Editor",
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": []
-}
