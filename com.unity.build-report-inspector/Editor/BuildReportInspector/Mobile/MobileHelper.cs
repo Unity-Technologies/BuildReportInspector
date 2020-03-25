@@ -63,9 +63,16 @@ namespace Unity.BuildReportInspector.Mobile
 
         private static void GenerateMobileAppendix(string applicationPath, string guid)
         {
-            var appendix = new MobileAppendix(applicationPath);
-            var appendixFilePath = Path.Combine(AppendixSavePath, guid);
-            appendix.Save(appendixFilePath);
+            try
+            {
+                var appendix = new MobileAppendix(applicationPath);
+                var appendixFilePath = Path.Combine(AppendixSavePath, guid);
+                appendix.Save(appendixFilePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
         }
 
         internal static MobileAppendix LoadMobileAppendix(string guid)

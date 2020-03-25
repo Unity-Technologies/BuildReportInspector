@@ -87,10 +87,7 @@ namespace Unity.BuildReportInspector.Mobile
                 return;
 
             // Extract the data about the different architectures comprising the build
-            if (MobileHelper.s_PlatformUtilities.GetArchitectureInfo(applicationPath, out var architectureInfos))
-            {
-                Architectures = architectureInfos;
-            }
+            Architectures = MobileHelper.s_PlatformUtilities.GetArchitectureInfo(applicationPath);
         }
 
         private static bool IsBuildValid(string buildPath)

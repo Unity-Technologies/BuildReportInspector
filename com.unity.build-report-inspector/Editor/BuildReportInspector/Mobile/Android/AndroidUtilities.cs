@@ -59,68 +59,47 @@ namespace Unity.BuildReportInspector.Mobile.Android
             throw new FileNotFoundException($"Java executable not found at {javaExecutable}.");
         }
 
-        public bool GetArchitectureInfo(string applicationPath, out MobileArchInfo[] architectures)
+        public MobileArchInfo[] GetArchitectureInfo(string applicationPath)
         {
-            try
+            MobileArchInfo[] architectures;
+            using (var archive = ZipFile.OpenRead(applicationPath))
             {
-                architectures = null;
-                using (var archive = ZipFile.OpenRead(applicationPath))
+                var archList = new List<MobileArchInfo>();
+                foreach (var file in archive.Entries)
                 {
-                    var archList = new List<MobileArchInfo>();
-                    foreach (var file in archive.Entries)
-                    {
-                        if (file.Name != "libunity.so")
-                            continue;
-                        var parent = file.FullName.Replace("/libunity.so", string.Empty);
-                        var architecture = parent.Substring(parent.LastIndexOf('/') + 1);
-                        archList.Add(new MobileArchInfo(architecture));
-                    }
-                
-                    architectures = archList.ToArray();
+                    if (file.Name != "libunity.so")
+                        continue;
+                    var parent = file.FullName.Replace("/libunity.so", string.Empty);
+                    var architecture = parent.Substring(parent.LastIndexOf('/') + 1);
+                    archList.Add(new MobileArchInfo(architecture));
                 }
 
-                if (architectures == null)
+                if (archList.Count < 1)
                 {
-                    Debug.LogError("Failed to extract architecture data from the build.");
-                    return false;
+                    throw new Exception($"Couldn't extract architecture info from application {applicationPath}");
                 }
 
-                var applicationType = GetApplicationType(applicationPath);
-                switch (applicationType)
-                {
-                    case ApplicationType.Aab:
-                        GetAabDownloadSizes(applicationPath, ref architectures);
-                        break;
-                    case ApplicationType.Apk:
-                        if (GetApkDownloadSize(applicationPath, out var downloadSize))
-                        {
-                            foreach (var archInfo in architectures)
-                            {
-                                archInfo.DownloadSize = downloadSize;
-                            }
-                        }
-                        else
-                        {
-                            Debug.LogError("Failed to calculate the application download size.");
-                            return false;
-                        }
-                        break;
-                    default:
-                    {
-                        Debug.LogError("Unknown application type to collect architecture data from.");
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-                architectures = null;
-                return false;
+                architectures = archList.ToArray();
             }
 
+            var applicationType = GetApplicationType(applicationPath);
+            switch (applicationType)
+            {
+                case ApplicationType.Aab:
+                    GetAabDownloadSizes(applicationPath, ref architectures);
+                    break;
+                case ApplicationType.Apk:
+                    var downloadSize = GetApkDownloadSize(applicationPath);
+                    foreach (var archInfo in architectures)
+                    {
+                        archInfo.DownloadSize = downloadSize;
+                    }
+                    break;
+                default:
+                    throw new Exception("Unknown application type to collect architecture data from.");
+            }
+
+            return architectures;
         }
 
         private static ApplicationType GetApplicationType(string applicationPath)
@@ -139,7 +118,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             }
         }
 
-        private static bool GetAabDownloadSizes(string applicationPath, ref MobileArchInfo[] architectureInfos)
+        private static void GetAabDownloadSizes(string applicationPath, ref MobileArchInfo[] architectureInfos)
         {
             var temporaryFolder = Utilities.GetTemporaryFolder();
             try
@@ -152,22 +131,19 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 Utilities.RunProcessAndGetOutput(javaPath, buildApksArgs, out var buildApksError,out var buildApksExitCode);
                 if (buildApksExitCode != 0)
                 {
-                    Debug.LogError($"Failed to run bundletool. Error:\n{buildApksError}");
-                    return false;
+                    throw new Exception($"Failed to run bundletool. Error:\n{buildApksError}");
                 }
                 
                 var getSizeArgs = $"-jar \"{bundleTool}\" get-size total --apks \"{apksPath}\" --dimensions=ABI";
                 var getSizeOutput = Utilities.RunProcessAndGetOutput(javaPath, getSizeArgs, out var getSizeError,out var exitCode);
                 if (exitCode != 0)
                 {
-                    Debug.LogError($"Failed to run bundletool. Error:\n{getSizeError}");
-                    return false;
+                    throw new Exception($"Failed to run bundletool. Error:\n{getSizeError}");
                 }
 
                 if (!architectureInfos.All(x => getSizeOutput.Contains(x.Name)))
                 {
-                    Debug.LogError("Mismatch between architectures found in build and reported by bundletool.");
-                    return false;
+                    throw new Exception("Mismatch between architectures found in build and reported by bundletool.");
                 }
                 using (var reader = new StringReader(getSizeOutput))
                 {
@@ -186,8 +162,6 @@ namespace Unity.BuildReportInspector.Mobile.Android
                         }
                     } while (line != null);
                 }
-
-                return true;
             }
             finally
             {
@@ -195,18 +169,15 @@ namespace Unity.BuildReportInspector.Mobile.Android
             }
         }
 
-        private bool GetApkDownloadSize(string applicationPath, out long downloadSize)
+        private long GetApkDownloadSize(string applicationPath)
         {
-            downloadSize = -1;
-
             string apkAnalyzerPath;
             if (IsTestEnvironment)
             {
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
                 if (!Directory.Exists(sdkEnv))
                 {
-                    Debug.LogError($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
-                    return false;
+                    throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
                 apkAnalyzerPath = Path.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
@@ -214,8 +185,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             {
                 if (!Directory.Exists(AndroidExternalToolsSettings.sdkRootPath))
                 {
-                    Debug.LogError("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
-                    return false;
+                    throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
                 apkAnalyzerPath = Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "tools", "bin", "apkanalyzer");
             }
@@ -240,12 +210,10 @@ namespace Unity.BuildReportInspector.Mobile.Android
             
             if (exitCode != 0 || !long.TryParse(apkAnalyzerOutput, out var result))
             {
-                Debug.LogError($"apkanalyzer failed to estimate the apk size. Output:\n{apkAnalyzerOutput}");
-                return false;
+                throw new Exception($"apkanalyzer failed to estimate the apk size. Output:\n{apkAnalyzerOutput}");
             }
-
-            downloadSize = result;
-            return true;
+            
+            return result;
         }
 
         private static string GetApkAnalyzerJavaArgs()

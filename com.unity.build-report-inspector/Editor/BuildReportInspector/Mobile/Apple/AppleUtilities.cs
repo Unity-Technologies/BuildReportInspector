@@ -15,9 +15,8 @@ namespace Unity.BuildReportInspector.Mobile.Apple
         private const string k_Size = "/usr/bin/size";
         private const string k_File = "/usr/bin/file";
 
-        public bool GetArchitectureInfo(string applicationPath, out MobileArchInfo[] architectures)
+        public MobileArchInfo[] GetArchitectureInfo(string applicationPath)
         {
-            architectures = null;
             var temporaryFolder = Utilities.GetTemporaryFolder();
             try
             {
@@ -29,8 +28,7 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                         x.FullName.EndsWith(k_UnityFrameworkRelativePath, StringComparison.InvariantCulture));
                     if (unityFramework == null)
                     {
-                        Debug.LogError("Failed to locate UnityFramework file in the build.");
-                        return false;
+                        throw new Exception("Failed to locate UnityFramework file in the build.");
                     }
 
                     unityFramework.ExtractToFile(frameworkFile);
@@ -41,8 +39,7 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                 var archOutput = Utilities.RunProcessAndGetOutput(k_File, $"-b {frameworkFile}", out var archError, out var archExitCode);
                 if (archExitCode != 0)
                 {
-                    Debug.LogError($"Failed to collect UnityFramework data with command: {k_Size} -m {frameworkFile}. Error:\n{archError}");
-                    return false;
+                    throw new Exception($"Failed to collect UnityFramework data with command: {k_Size} -m {frameworkFile}. Error:\n{archError}");
                 }
 
                 using (var reader = new StringReader(archOutput))
@@ -59,56 +56,52 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                 }
 
                 var appleArchInfos = new List<MobileArchInfo>();
+                foreach (var arch in foundArchitectures)
                 {
-                    foreach (var arch in foundArchitectures)
+                    var sizeArgs = $"-m -arch {arch} {frameworkFile}";
+                    var sizeOutput = Utilities.RunProcessAndGetOutput(k_Size, sizeArgs, out var sizeError, out var sizeExitCode);
+                    if (sizeExitCode != 0)
                     {
-                        var sizeArgs = $"-m -arch {arch} {frameworkFile}";
-                        var sizeOutput = Utilities.RunProcessAndGetOutput(k_Size, sizeArgs, out var sizeError, out var exitCode);
-                        if (exitCode != 0)
-                        {
-                            Debug.LogError($"Failed to collect UnityFramework data with command: {k_Size} {sizeArgs}. Error:\n{sizeError}");
-                            return false;
-                        }
-
-                        var segments = new MobileArchInfo.ExecutableSegments();
-                        using (var reader = new StringReader(sizeOutput))
-                        {
-                            string line;
-                            while ((line = reader.ReadLine()) != null)
-                            {
-                                if (!line.StartsWith("Segment __", StringComparison.InvariantCulture))
-                                {
-                                    continue;
-                                }
-
-                                var segmentSize = long.Parse(line.Substring(line.LastIndexOf(' ') + 1));
-
-                                if (line.Contains("__TEXT"))
-                                    segments.TextSize = segmentSize;
-                                else if (line.Contains("__DATA"))
-                                    segments.DataSize = segmentSize;
-                                else if (line.Contains("__LLVM"))
-                                    segments.LlvmSize = segmentSize;
-                                else if (line.Contains("__LINKEDIT"))
-                                    segments.LinkeditSize = segmentSize;
-                            }
-                        }
-                        
-                        // Calculate the estimated App Store download size with the formula:
-                        // DownloadSize = Whole App - Framework Size + Text Segment + (Data Segment / 5)
-                        var downloadSize = appSizeNoFramework + segments.TextSize + segments.DataSize / 5;
-
-                        appleArchInfos.Add(new MobileArchInfo(arch) { DownloadSize = downloadSize, Segments = segments});
+                        throw new Exception($"Failed to collect UnityFramework data with command: {k_Size} {sizeArgs}. Error:\n{sizeError}");
                     }
-                }
 
-                if (appleArchInfos.Count == 0)
+                    var segments = new MobileArchInfo.ExecutableSegments();
+                    using (var reader = new StringReader(sizeOutput))
+                    {
+                        string line;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            if (!line.StartsWith("Segment __", StringComparison.InvariantCulture))
+                            {
+                                continue;
+                            }
+
+                            var segmentSize = long.Parse(line.Substring(line.LastIndexOf(' ') + 1));
+
+                            if (line.Contains("__TEXT"))
+                                segments.TextSize = segmentSize;
+                            else if (line.Contains("__DATA"))
+                                segments.DataSize = segmentSize;
+                            else if (line.Contains("__LLVM"))
+                                segments.LlvmSize = segmentSize;
+                            else if (line.Contains("__LINKEDIT"))
+                                segments.LinkeditSize = segmentSize;
+                        }
+                    }
+                    
+                    // Calculate the estimated App Store download size with the formula:
+                    // DownloadSize = Whole App - Framework Size + Text Segment + (Data Segment / 5)
+                    var downloadSize = appSizeNoFramework + segments.TextSize + segments.DataSize / 5;
+
+                    appleArchInfos.Add(new MobileArchInfo(arch) { DownloadSize = downloadSize, Segments = segments});
+                }
+                
+                if (appleArchInfos.Count < 1)
                 {
-                    return false;
+                    throw new Exception($"Couldn't extract architecture info from application {applicationPath}");
                 }
 
-                architectures = appleArchInfos.ToArray();
-                return true;
+                return appleArchInfos.ToArray();
             }
             finally
             {
