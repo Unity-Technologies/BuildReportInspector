@@ -24,7 +24,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
         private static string GetBundleToolPath()
         {
             var editorDir = Directory.GetParent(EditorApplication.applicationPath).FullName;
-#if UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_LINUX
             var androidToolPath = Path.Combine(editorDir, "Data", "PlaybackEngines", "AndroidPlayer", "Tools");
 #else
             var androidToolPath = Path.Combine(EditorApplication.applicationPath, "Contents", "PlaybackEngines", "AndroidPlayer", "Tools");
@@ -139,7 +139,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             }
         }
 
-        public bool GetAabDownloadSizes(string applicationPath, ref MobileArchInfo[] architectureInfos)
+        private static bool GetAabDownloadSizes(string applicationPath, ref MobileArchInfo[] architectureInfos)
         {
             var temporaryFolder = Utilities.GetTemporaryFolder();
             try
@@ -195,7 +195,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             }
         }
 
-        public bool GetApkDownloadSize(string applicationPath, out long downloadSize)
+        private bool GetApkDownloadSize(string applicationPath, out long downloadSize)
         {
             downloadSize = -1;
 
@@ -248,7 +248,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             return true;
         }
 
-        public static string GetApkAnalyzerJavaArgs()
+        private static string GetApkAnalyzerJavaArgs()
         {
             var appHome = $"\"{Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "tools")}\"";
             var defaultJvmOpts = $"-Dcom.android.sdklib.toolsdir={appHome}";
