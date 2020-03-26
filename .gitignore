@@ -1,3 +1,12 @@
 /.Editor
 /upm-ci~
 /com.unity.build-report-inspector/package-lock.json.meta
+TestProject/*
+!TestProject/Assets/
+!TestProject/ProjectSettings/
+!TestProject/Packages/
+TestProject/ProjectSettings/ProjectVersion.txt
+TestProject/Assets/BuildReports*
+
+# macOS meta folders
+*.DS_Store*
