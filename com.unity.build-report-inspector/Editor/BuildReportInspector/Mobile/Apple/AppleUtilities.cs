@@ -36,10 +36,12 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                 }
 
                 var foundArchitectures = new List<string>();
-                var archOutput = Utilities.RunProcessAndGetOutput(k_File, $"-b {frameworkFile}", out var archError, out var archExitCode);
+                string archError;
+                int archExitCode;
+                var archOutput = Utilities.RunProcessAndGetOutput(k_File, string.Format("-b {0}", frameworkFile), out archError, out archExitCode);
                 if (archExitCode != 0)
                 {
-                    throw new Exception($"Failed to collect UnityFramework data with command: {k_Size} -m {frameworkFile}. Error:\n{archError}");
+                    throw new Exception(string.Format("Failed to collect UnityFramework data with command: {0} -m {1}. Error:\n{2}", k_Size, frameworkFile, archError));
                 }
 
                 using (var reader = new StringReader(archOutput))
@@ -58,11 +60,13 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                 var appleArchInfos = new List<MobileArchInfo>();
                 foreach (var arch in foundArchitectures)
                 {
-                    var sizeArgs = $"-m -arch {arch} {frameworkFile}";
-                    var sizeOutput = Utilities.RunProcessAndGetOutput(k_Size, sizeArgs, out var sizeError, out var sizeExitCode);
+                    var sizeArgs = string.Format("-m -arch {0} {1}", arch, frameworkFile);
+                    string sizeError;
+                    int sizeExitCode;
+                    var sizeOutput = Utilities.RunProcessAndGetOutput(k_Size, sizeArgs, out sizeError, out sizeExitCode);
                     if (sizeExitCode != 0)
                     {
-                        throw new Exception($"Failed to collect UnityFramework data with command: {k_Size} {sizeArgs}. Error:\n{sizeError}");
+                        throw new Exception(string.Format("Failed to collect UnityFramework data with command: {0} {1}. Error:\n{2}", k_Size, sizeArgs, sizeError));
                     }
 
                     var segments = new MobileArchInfo.ExecutableSegments();
@@ -98,7 +102,7 @@ namespace Unity.BuildReportInspector.Mobile.Apple
                 
                 if (appleArchInfos.Count < 1)
                 {
-                    throw new Exception($"Couldn't extract architecture info from application {applicationPath}");
+                    throw new Exception(string.Format("Couldn't extract architecture info from application {0}", applicationPath));
                 }
 
                 return appleArchInfos.ToArray();

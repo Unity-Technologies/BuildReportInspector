@@ -19,7 +19,10 @@ namespace Unity.BuildReportInspector.Mobile.Android
             Aab
         }
 
-        private static bool IsTestEnvironment => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID"));
+        private static bool IsTestEnvironment
+        {
+            get { return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID")); }
+        }
 
         private static string JdkPath
         {
@@ -51,17 +54,17 @@ namespace Unity.BuildReportInspector.Mobile.Android
 #if UNITY_EDITOR_WIN || UNITY_EDITOR_LINUX
             var androidToolPath = Path.Combine(editorDir, "Data", "PlaybackEngines", "AndroidPlayer", "Tools");
 #else
-            var androidToolPath = Path.Combine(EditorApplication.applicationPath, "Contents", "PlaybackEngines", "AndroidPlayer", "Tools");
+            var androidToolPath = Utilities.Combine(EditorApplication.applicationPath, "Contents", "PlaybackEngines", "AndroidPlayer", "Tools");
             if (!Directory.Exists(androidToolPath))
             {
-                androidToolPath =  Path.Combine(editorDir, "PlaybackEngines", "AndroidPlayer", "Tools");
+                androidToolPath =  Utilities.Combine(editorDir, "PlaybackEngines", "AndroidPlayer", "Tools");
             }
 #endif
-            var bundleToolName = Directory.EnumerateFiles(androidToolPath, "bundletool*jar").SingleOrDefault();
+            var bundleToolName = Directory.GetFiles(androidToolPath, "bundletool*jar").SingleOrDefault();
             if (!string.IsNullOrEmpty(bundleToolName))
                 return bundleToolName;
 
-            throw new FileNotFoundException($"bundletool*.jar not found at {androidToolPath}");
+            throw new FileNotFoundException(string.Format("bundletool*.jar not found at {0}", androidToolPath));
         }
 
         private static string GetJavaExecutablePath()
@@ -69,14 +72,14 @@ namespace Unity.BuildReportInspector.Mobile.Android
             if (string.IsNullOrEmpty(JdkPath) || !Directory.Exists(JdkPath))
                 throw new DirectoryNotFoundException("Could not resolve Java directory. Please install Java through Unity Hub.");
 
-            var javaExecutable = Path.Combine(JdkPath, "bin", "java");
+            var javaExecutable = Utilities.Combine(JdkPath, "bin", "java");
 #if UNITY_EDITOR_WIN
             javaExecutable += ".exe";
 #endif
             if (File.Exists(javaExecutable))
                 return javaExecutable;
             
-            throw new FileNotFoundException($"Java executable not found at {javaExecutable}.");
+            throw new FileNotFoundException(string.Format("Java executable not found at {0}.", javaExecutable));
         }
 
         public MobileArchInfo[] GetArchitectureInfo(string applicationPath)
@@ -96,7 +99,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
                 if (archList.Count < 1)
                 {
-                    throw new Exception($"Couldn't extract architecture info from application {applicationPath}");
+                    throw new Exception(string.Format("Couldn't extract architecture info from application {0}", applicationPath));
                 }
 
                 architectures = archList.ToArray();
@@ -140,25 +143,34 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
         private static void GetAabDownloadSizes(string applicationPath, ref MobileArchInfo[] architectureInfos)
         {
+#if UNITY_2018
+            foreach (var archInfo in architectureInfos)
+                archInfo.DownloadSize = 0;
+            return;
+#endif
             var temporaryFolder = Utilities.GetTemporaryFolder();
             try
             {
                 var javaPath = GetJavaExecutablePath();
                 var bundleTool = GetBundleToolPath();
-                var apksPath = Path.Combine(temporaryFolder, $"{Path.GetFileNameWithoutExtension(applicationPath)}.apks");
+                var apksPath = Path.Combine(temporaryFolder, string.Format("{0}.apks", Path.GetFileNameWithoutExtension(applicationPath)));
 
-                var buildApksArgs = $"-jar \"{bundleTool}\" build-apks --bundle \"{applicationPath}\" --output \"{apksPath}\"";
-                Utilities.RunProcessAndGetOutput(javaPath, buildApksArgs, out var buildApksError,out var buildApksExitCode);
+                var buildApksArgs = string.Format("-jar \"{0}\" build-apks --bundle \"{1}\" --output \"{2}\"", bundleTool, applicationPath, apksPath);
+                string buildApksError;
+                int buildApksExitCode;
+                Utilities.RunProcessAndGetOutput(javaPath, buildApksArgs, out buildApksError,out buildApksExitCode);
                 if (buildApksExitCode != 0)
                 {
-                    throw new Exception($"Failed to run bundletool. Error:\n{buildApksError}");
+                    throw new Exception(string.Format("Failed to run bundletool. Error:\n{0}", buildApksError));
                 }
                 
-                var getSizeArgs = $"-jar \"{bundleTool}\" get-size total --apks \"{apksPath}\" --dimensions=ABI";
-                var getSizeOutput = Utilities.RunProcessAndGetOutput(javaPath, getSizeArgs, out var getSizeError,out var exitCode);
-                if (exitCode != 0)
+                var getSizeArgs = string.Format("-jar \"{0}\" get-size total --apks \"{1}\" --dimensions=ABI", bundleTool, apksPath);
+                string getSizeError;
+                int getSizeExitCode;
+                var getSizeOutput = Utilities.RunProcessAndGetOutput(javaPath, getSizeArgs, out getSizeError,out getSizeExitCode);
+                if (getSizeExitCode != 0)
                 {
-                    throw new Exception($"Failed to run bundletool. Error:\n{getSizeError}");
+                    throw new Exception(string.Format("Failed to run bundletool. Error:\n{0}", getSizeError));
                 }
 
                 if (!architectureInfos.All(x => getSizeOutput.Contains(x.Name)))
@@ -177,7 +189,8 @@ namespace Unity.BuildReportInspector.Mobile.Android
                         {
                             if (!line.Contains(archInfo.Name))
                                 continue;
-                            if (long.TryParse(line.Substring(line.LastIndexOf(',') + 1), out var result))
+                            long result;
+                            if (long.TryParse(line.Substring(line.LastIndexOf(',') + 1), out result))
                                 archInfo.DownloadSize = result;
                         }
                     } while (line != null);
@@ -197,9 +210,9 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
                 if (!Directory.Exists(sdkEnv))
                 {
-                    throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
+                    throw new DirectoryNotFoundException(string.Format("ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {0}", sdkEnv));
                 }
-                apkAnalyzerPath = Path.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
             else
             {
@@ -207,7 +220,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Path.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
             
 #if UNITY_EDITOR_WIN
@@ -218,19 +231,22 @@ namespace Unity.BuildReportInspector.Mobile.Android
             int exitCode;
             if (File.Exists(apkAnalyzerPath))
             {
-                var apkAnalyzerArgs = $"apk download-size \"{applicationPath}\"";
-                apkAnalyzerOutput = Utilities.RunProcessAndGetOutput(apkAnalyzerPath, apkAnalyzerArgs, out _, out exitCode);
+                var apkAnalyzerArgs = string.Format("apk download-size \"{0}\"", applicationPath);
+                string error;
+                apkAnalyzerOutput = Utilities.RunProcessAndGetOutput(apkAnalyzerPath, apkAnalyzerArgs, out error, out exitCode);
             }
             else
             {
                 var javaExecutablePath = GetJavaExecutablePath();
-                var apkAnalyzerArgs = $"{GetApkAnalyzerJavaArgs()} apk download-size \"{applicationPath}\"";
-                apkAnalyzerOutput = Utilities.RunProcessAndGetOutput(javaExecutablePath, apkAnalyzerArgs, out _, out exitCode);
+                var apkAnalyzerArgs = string.Format("{0} apk download-size \"{1}\"", GetApkAnalyzerJavaArgs(), applicationPath);
+                string error;
+                apkAnalyzerOutput = Utilities.RunProcessAndGetOutput(javaExecutablePath, apkAnalyzerArgs, out error, out exitCode);
             }
-            
-            if (exitCode != 0 || !long.TryParse(apkAnalyzerOutput, out var result))
+
+            long result;
+            if (exitCode != 0 || !long.TryParse(apkAnalyzerOutput, out result))
             {
-                throw new Exception($"apkanalyzer failed to estimate the apk size. Output:\n{apkAnalyzerOutput}");
+                throw new Exception(string.Format("apkanalyzer failed to estimate the apk size. Output:\n{0}", apkAnalyzerOutput));
             }
             
             return result;
@@ -238,21 +254,23 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
         private static string GetApkAnalyzerJavaArgs()
         {
-            var appHome = $"\"{Path.Combine(SdkPath, "tools")}\"";
-            var defaultJvmOpts = $"-Dcom.android.sdklib.toolsdir={appHome}";
-            var classPath = $"{appHome}\\lib\\dvlib-26.0.0-dev.jar;{appHome}\\lib\\util-2.2.1.jar;{appHome}\\lib\\jimfs-1.1.jar;{appHome}\\lib\\" +
-                $"annotations-13.0.jar;{appHome}\\lib\\ddmlib-26.0.0-dev.jar;{appHome}\\lib\\repository-26.0.0-dev.jar;{appHome}\\lib\\" +
-                $"sdk-common-26.0.0-dev.jar;{appHome}\\lib\\kotlin-stdlib-1.1.3-2.jar;{appHome}\\lib\\protobuf-java-3.0.0.jar;{appHome}\\lib\\" +
-                $"apkanalyzer-cli.jar;{appHome}\\lib\\gson-2.3.jar;{appHome}\\lib\\httpcore-4.2.5.jar;{appHome}\\lib\\dexlib2-2.2.1.jar;{appHome}\\" +
-                $"lib\\commons-compress-1.12.jar;{appHome}\\lib\\generator.jar;{appHome}\\lib\\error_prone_annotations-2.0.18.jar;{appHome}\\lib\\" +
-                $"commons-codec-1.6.jar;{appHome}\\lib\\kxml2-2.3.0.jar;{appHome}\\lib\\httpmime-4.1.jar;{appHome}\\lib\\annotations-12.0.jar;{appHome}\\" +
-                $"lib\\bcpkix-jdk15on-1.56.jar;{appHome}\\lib\\jsr305-3.0.0.jar;{appHome}\\lib\\explainer.jar;{appHome}\\lib\\builder-model-3.0.0-dev.jar;" +
-                $"{appHome}\\lib\\baksmali-2.2.1.jar;{appHome}\\lib\\j2objc-annotations-1.1.jar;{appHome}\\lib\\layoutlib-api-26.0.0-dev.jar;{appHome}\\" +
-                $"lib\\jcommander-1.64.jar;{appHome}\\lib\\commons-logging-1.1.1.jar;{appHome}\\lib\\annotations-26.0.0-dev.jar;{appHome}\\lib\\" +
-                $"builder-test-api-3.0.0-dev.jar;{appHome}\\lib\\animal-sniffer-annotations-1.14.jar;{appHome}\\lib\\bcprov-jdk15on-1.56.jar;{appHome}\\lib\\" +
-                $"httpclient-4.2.6.jar;{appHome}\\lib\\common-26.0.0-dev.jar;{appHome}\\lib\\jopt-simple-4.9.jar;{appHome}\\lib\\sdklib-26.0.0-dev.jar;{appHome}\\" +
-                $"lib\\apkanalyzer.jar;{appHome}\\lib\\shared.jar;{appHome}\\lib\\binary-resources.jar;{appHome}\\lib\\guava-22.0.jar";
-            return $"{defaultJvmOpts} -classpath {classPath} com.android.tools.apk.analyzer.ApkAnalyzerCli";
+            var appHome = string.Format("\"{0}\"", Path.Combine(SdkPath, "tools"));
+            var defaultJvmOpts = string.Format("-Dcom.android.sdklib.toolsdir={0}", appHome);
+            var classPath = string.Format("{0}\\lib\\dvlib-26.0.0-dev.jar;{0}\\lib\\util-2.2.1.jar;{0}\\l" +
+                "ib\\jimfs-1.1.jar;{0}\\lib\\annotations-13.0.jar;{0}\\lib\\ddmlib-26.0.0-dev.jar;{0}\\lib\\repositor" +
+                "y-26.0.0-dev.jar;{0}\\lib\\sdk-common-26.0.0-dev.jar;{0}\\lib\\kotlin-stdlib-1.1.3-2.jar;{0}\\lib\\p" +
+                "rotobuf-java-3.0.0.jar;{0}\\lib\\apkanalyzer-cli.jar;{0}\\lib\\gson-2.3.jar;{0}\\lib\\httpcore-4.2.5" +
+                ".jar;{0}\\lib\\dexlib2-2.2.1.jar;{0}\\lib\\commons-compress-1.12.jar;{0}\\lib\\generator.jar;{0}\\li" +
+                "b\\error_prone_annotations-2.0.18.jar;{0}\\lib\\commons-codec-1.6.jar;{0}\\lib\\kxml2-2.3.0.jar;{0}" +
+                "\\lib\\httpmime-4.1.jar;{0}\\lib\\annotations-12.0.jar;{0}\\lib\\bcpkix-jdk15on-1.56.jar;{0}\\lib\\j" +
+                "sr305-3.0.0.jar;{0}\\lib\\explainer.jar;{0}\\lib\\builder-model-3.0.0-dev.jar;{0}\\lib\\baksmali-2.2" +
+                ".1.jar;{0}\\lib\\j2objc-annotations-1.1.jar;{0}\\lib\\layoutlib-api-26.0.0-dev.jar;{0}\\lib\\jcomman" +
+                "der-1.64.jar;{0}\\lib\\commons-logging-1.1.1.jar;{0}\\lib\\annotations-26.0.0-dev.jar;{0}\\lib\\buil" +
+                "der-test-api-3.0.0-dev.jar;{0}\\lib\\animal-sniffer-annotations-1.14.jar;{0}\\lib\\bcprov-jdk15on-1." +
+                "56.jar;{0}\\lib\\httpclient-4.2.6.jar;{0}\\lib\\common-26.0.0-dev.jar;{0}\\lib\\jopt-simple-4.9.jar;" +
+                "{0}\\lib\\sdklib-26.0.0-dev.jar;{0}\\lib\\apkanalyzer.jar;{0}\\lib\\shared.jar;{0}\\lib\\binary-reso" +
+                "urces.jar;{0}\\lib\\guava-22.0.jar", appHome);
+            return string.Format("{0} -classpath {1} com.android.tools.apk.analyzer.ApkAnalyzerCli", defaultJvmOpts, classPath);
         }
         
         [InitializeOnLoadMethod]

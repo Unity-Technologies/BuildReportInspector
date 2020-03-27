@@ -1,5 +1,6 @@
 #if UNITY_ANDROID || UNITY_IOS
 using System.IO;
+using Unity.Mobile.BuildReport.Tools;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -12,7 +13,7 @@ namespace Unity.BuildReportInspector.Mobile
         private const string k_GuidFileName = "UnityBuildGuid.txt";
         private static string s_LastBuildGuid;
         
-        public int callbackOrder { get; }
+        public int callbackOrder { get { return 0; } }
         public void OnPreprocessBuild(BuildReport report)
         {
             s_LastBuildGuid = null;
@@ -31,7 +32,7 @@ namespace Unity.BuildReportInspector.Mobile
                 return;
             
             // On iOS, label the build with a unique GUID, so that report can be generated later.
-            var guidPath = Path.Combine(report.summary.outputPath, "Data", k_GuidFileName);
+            var guidPath = Utilities.Combine(report.summary.outputPath, "Data", k_GuidFileName);
             File.WriteAllText(guidPath, s_LastBuildGuid);
         }
 

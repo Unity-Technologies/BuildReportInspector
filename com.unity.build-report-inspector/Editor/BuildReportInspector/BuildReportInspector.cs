@@ -35,8 +35,15 @@ namespace Unity.BuildReportInspector
             Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(assetPath) };
         }
 
-        private BuildReport report => target as BuildReport;
-        private MobileAppendix mobileAppendix => MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
+        private BuildReport report
+        {
+            get { return target as BuildReport; }
+        }
+
+        private MobileAppendix mobileAppendix
+        {
+            get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
+        }
 
         private static GUIStyle s_SizeStyle;
 
@@ -279,18 +286,21 @@ namespace Unity.BuildReportInspector
                         var icon = "console.warnicon.sml";
                         if (worstChildrenLogType != LogType.Warning)
                             icon = "console.erroricon.sml";
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step?.name, icon));
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step.GetValueOrDefault().name, icon));
                     }
                     else
                     {
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, step?.name);
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, step.GetValueOrDefault().name);
                     }
                 }
                 else
-                    GUILayout.Label(step?.name);
+                    GUILayout.Label(step.GetValueOrDefault().name);
 
                 GUILayout.FlexibleSpace();
-                GUILayout.Label(step?.duration.Hours + ":" + step?.duration.Minutes.ToString("D2") + ":" + step?.duration.Seconds.ToString("D2") + "." + step?.duration.Milliseconds.ToString("D3"));
+                GUILayout.Label(step.GetValueOrDefault().duration.Hours + ":" + 
+                                step.GetValueOrDefault().duration.Minutes.ToString("D2") + ":" + 
+                                step.GetValueOrDefault().duration.Seconds.ToString("D2") + "." + 
+                                step.GetValueOrDefault().duration.Milliseconds.ToString("D3"));
                 GUILayout.EndHorizontal();
 
                 if (foldoutState)
@@ -341,7 +351,8 @@ namespace Unity.BuildReportInspector
                     EditorGUILayout.LabelField("    Download Sizes: ");
                     foreach (var entry in mobileAppendix.Architectures)
                     {
-                        EditorGUILayout.LabelField($"            {entry.Name}", FormatSize((ulong)entry.DownloadSize));
+                        var sizeText = entry.DownloadSize == 0 ? "N/A" : FormatSize((ulong) entry.DownloadSize);
+                        EditorGUILayout.LabelField(string.Format("            {0}", entry.Name), sizeText);
                     }
                 }
                 else

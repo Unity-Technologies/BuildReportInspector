@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Unity.Mobile.BuildReport.Tools
 {
@@ -30,6 +31,11 @@ namespace Unity.Mobile.BuildReport.Tools
         internal static string GetTemporaryFolder()
         {
             return Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+        }
+
+        internal static string Combine(params string[] parts)
+        {
+            return parts.Aggregate(string.Empty, Path.Combine);
         }
     }
 }
