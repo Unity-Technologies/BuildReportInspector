@@ -146,8 +146,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
 #if UNITY_2018
             foreach (var archInfo in architectureInfos)
                 archInfo.DownloadSize = 0;
-            return;
-#endif
+#else
             var temporaryFolder = Utilities.GetTemporaryFolder();
             try
             {
@@ -200,6 +199,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
             {
                 Directory.Delete(temporaryFolder, true);
             }
+#endif // UNITY_2018
         }
 
         private long GetApkDownloadSize(string applicationPath)
@@ -210,7 +210,8 @@ namespace Unity.BuildReportInspector.Mobile.Android
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
                 if (!Directory.Exists(sdkEnv))
                 {
-                    throw new DirectoryNotFoundException(string.Format("ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {0}", sdkEnv));
+                    throw new DirectoryNotFoundException(string.Format("ANDROID_SDK_ROOT environment variable not " + 
+                        "pointing to a valid Android SDK directory. Current value: {0}", sdkEnv));
                 }
                 apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
