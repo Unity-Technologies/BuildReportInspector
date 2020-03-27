@@ -525,6 +525,7 @@ namespace Unity.BuildReportInspector
         }
 #endif // !UNITY_2019_3_OR_NEWER
 
+#if UNITY_2019_3_OR_NEWER
         private void OnAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -565,6 +566,7 @@ namespace Unity.BuildReportInspector
             }
             DisplayAssetsView(vPos);
         }
+#endif // UNITY_2019_3_OR_NEWER
 
         private void DisplayAssetsView(float vPos)
         {
