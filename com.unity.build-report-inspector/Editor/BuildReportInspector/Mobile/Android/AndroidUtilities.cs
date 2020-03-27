@@ -21,6 +21,30 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
         private static bool IsTestEnvironment => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID"));
 
+        private static string JdkPath
+        {
+            get
+            {
+#if UNITY_2018
+                return EditorPrefs.GetString("JdkPath");
+#else
+                return AndroidExternalToolsSettings.jdkRootPath;
+#endif
+            }
+        }
+
+        private static string SdkPath
+        {
+            get
+            {
+#if UNITY_2018
+                return EditorPrefs.GetString("AndroidSdkRoot");
+#else
+                return AndroidExternalToolsSettings.sdkRootPath;
+#endif
+            }
+        }
+
         private static string GetBundleToolPath()
         {
             var editorDir = Directory.GetParent(EditorApplication.applicationPath).FullName;
@@ -42,14 +66,10 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
         private static string GetJavaExecutablePath()
         {
-            var javaPath = IsTestEnvironment ? 
-                Environment.GetEnvironmentVariable("JAVA_HOME") : 
-                AndroidExternalToolsSettings.jdkRootPath;
-
-            if (string.IsNullOrEmpty(javaPath) || !Directory.Exists(javaPath))
+            if (string.IsNullOrEmpty(JdkPath) || !Directory.Exists(JdkPath))
                 throw new DirectoryNotFoundException("Could not resolve Java directory. Please install Java through Unity Hub.");
 
-            var javaExecutable = Path.Combine(javaPath, "bin", "java");
+            var javaExecutable = Path.Combine(JdkPath, "bin", "java");
 #if UNITY_EDITOR_WIN
             javaExecutable += ".exe";
 #endif
@@ -183,11 +203,11 @@ namespace Unity.BuildReportInspector.Mobile.Android
             }
             else
             {
-                if (!Directory.Exists(AndroidExternalToolsSettings.sdkRootPath))
+                if (!Directory.Exists(SdkPath))
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Path.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
             
 #if UNITY_EDITOR_WIN
@@ -218,7 +238,7 @@ namespace Unity.BuildReportInspector.Mobile.Android
 
         private static string GetApkAnalyzerJavaArgs()
         {
-            var appHome = $"\"{Path.Combine(AndroidExternalToolsSettings.sdkRootPath, "tools")}\"";
+            var appHome = $"\"{Path.Combine(SdkPath, "tools")}\"";
             var defaultJvmOpts = $"-Dcom.android.sdklib.toolsdir={appHome}";
             var classPath = $"{appHome}\\lib\\dvlib-26.0.0-dev.jar;{appHome}\\lib\\util-2.2.1.jar;{appHome}\\lib\\jimfs-1.1.jar;{appHome}\\lib\\" +
                 $"annotations-13.0.jar;{appHome}\\lib\\ddmlib-26.0.0-dev.jar;{appHome}\\lib\\repository-26.0.0-dev.jar;{appHome}\\lib\\" +
