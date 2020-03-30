@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using Unity.Mobile.BuildReport.Tools;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEngine;
 
-namespace Unity.BuildReportInspector.Mobile.Android
+namespace Unity.BuildReportInspector.Mobile
 {
     internal class AndroidUtilities : IPlatformUtilities
     {

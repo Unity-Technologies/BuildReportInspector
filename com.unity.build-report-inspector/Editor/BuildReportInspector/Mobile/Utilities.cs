@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace Unity.Mobile.BuildReport.Tools
+namespace Unity.BuildReportInspector.Mobile
 {
     internal static class Utilities
     {

@@ -2,12 +2,11 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using Unity.Mobile.BuildReport.Tools;
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
 using UnityEditor;
 
-namespace Unity.BuildReportInspector.Mobile.Apple
+namespace Unity.BuildReportInspector.Mobile
 {
     internal class AppleUtilities : IPlatformUtilities
     {

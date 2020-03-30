@@ -1,6 +1,5 @@
 #if UNITY_ANDROID || UNITY_IOS || UNITY_TVOS
 using System.IO;
-using Unity.Mobile.BuildReport.Tools;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
