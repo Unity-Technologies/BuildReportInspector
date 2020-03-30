@@ -20,8 +20,7 @@ The following table describes the package folder structure:
 
 |**Location**|**Description**|
 |---|---|
-|*Editor/BuildReportInspector*|Contains the script implementing the inspector.|
-|*Editor/BuildReportInspector/BuildReportInspector.cs*|Contains implementation for the inspector.|
+|*Editor*|Contains the package scripts.|
 
 <a name="Installation"></a>
 
