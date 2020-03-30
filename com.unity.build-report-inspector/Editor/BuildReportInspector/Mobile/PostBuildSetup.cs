@@ -1,4 +1,4 @@
-#if UNITY_ANDROID || UNITY_IOS
+#if UNITY_ANDROID || UNITY_IOS || UNITY_TVOS
 using System.IO;
 using Unity.Mobile.BuildReport.Tools;
 using UnityEditor;
@@ -12,7 +12,7 @@ namespace Unity.BuildReportInspector.Mobile
     {
         private const string k_GuidFileName = "UnityBuildGuid.txt";
         private static string s_LastBuildGuid;
-        
+
         public int callbackOrder { get { return 0; } }
         public void OnPreprocessBuild(BuildReport report)
         {
@@ -27,11 +27,11 @@ namespace Unity.BuildReportInspector.Mobile
                     
             // Save the guid for BuildPostProcess callback.
             s_LastBuildGuid = report.summary.guid.ToString();
-            
-            if (report.summary.platform != BuildTarget.iOS)
+
+            if (report.summary.platform != BuildTarget.iOS && report.summary.platform != BuildTarget.tvOS)
                 return;
-            
-            // On iOS, label the build with a unique GUID, so that report can be generated later.
+
+            // On iOS/tvOS, label the build with a unique GUID, so that report can be generated later.
             var guidPath = Utilities.Combine(report.summary.outputPath, "Data", k_GuidFileName);
             File.WriteAllText(guidPath, s_LastBuildGuid);
         }
@@ -47,4 +47,4 @@ namespace Unity.BuildReportInspector.Mobile
         }
     }
 }
-#endif
+#endif // UNITY_ANDROID || UNITY_IOS || UNITY_TVOS

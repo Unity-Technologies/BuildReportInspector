@@ -71,7 +71,7 @@ namespace Unity.BuildReportInspector.Mobile
                 var files = new List<MobileFile>();
                 foreach (var entry in archive.Entries)
                 {
-                    // Skip iOS directory meta files
+                    // Skip iOS/tvOS directory meta files
                     if (entry.Length == 0)
                         continue;
 

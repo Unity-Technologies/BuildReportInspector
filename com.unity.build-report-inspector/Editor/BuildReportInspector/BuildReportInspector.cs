@@ -361,10 +361,10 @@ namespace Unity.BuildReportInspector
                 }
             }
 #if UNITY_EDITOR_OSX
-            // On macOS, show a help dialog for generating the MobileAppendix for iOS
-            else if (report.summary.platform == BuildTarget.iOS)
+            // On macOS, show a help dialog for generating the MobileAppendix for iOS/tvOS
+            else if (report.summary.platform == BuildTarget.iOS || report.summary.platform == BuildTarget.tvOS)
             {
-                EditorGUILayout.HelpBox("To get more accurate iOS report data, please provide an .ipa file generated from a " +
+                EditorGUILayout.HelpBox("To get more accurate report data, please provide an .ipa file generated from a " +
                                         "matching Unity build using the dialog below.", MessageType.Warning);
                 if (!GUILayout.Button("Select an iOS .ipa bundle"))
                 {

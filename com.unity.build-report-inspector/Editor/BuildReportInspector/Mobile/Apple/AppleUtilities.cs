@@ -113,12 +113,12 @@ namespace Unity.BuildReportInspector.Mobile.Apple
             }
         }
 
-#if UNITY_IOS
+#if UNITY_IOS || UNITY_TVOS
         [InitializeOnLoadMethod]
         private static void Initialize()
         {
             MobileHelper.RegisterPlatformUtilities(new AppleUtilities());
         }
-#endif // UNITY_IOS
+#endif // UNITY_IOS || UNITY_TVOS
     }
 }
