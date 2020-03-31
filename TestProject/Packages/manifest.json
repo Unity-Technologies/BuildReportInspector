@@ -1,6 +1,10 @@
 {
   "disableProjectUpdate": true,
   "dependencies": {
-  	"com.unity.build-report-inspector": "file:../../com.unity.build-report-inspector"
-  }
+    "com.unity.build-report-inspector": "file:../../com.unity.build-report-inspector",
+    "com.unity.ide.rider": "2.0.2"
+  },
+  "testables": [
+    "com.unity.build-report-inspector"
+  ]
 }

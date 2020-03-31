@@ -1,15 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
+﻿using NUnit.Framework;
+using Unity.BuildReportInspector;
 
 namespace Tests
 {
     public class BuildReportInspectorTests
     {
         [Test]
-        public void SimpleTest
+        public void SimpleTest()
         {
             Assert.That(false);
         }
