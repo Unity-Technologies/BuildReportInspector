@@ -52,15 +52,16 @@ When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](h
 <img src="Documentation~/images/ScenesUsingAssets.png" width="400">
 
 ### Mobile
-The BuildReport API is not very good at reporting data from mobile builds. For this reason, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS).
+[Available from Unity 2019.3]  
+The BuildReport API is not very good at reporting data from mobile builds. For this reason, starting at Unity 2019.3, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS).
 
 <img src="Documentation~/images/MobileAppendix.png" width="400">
 
 #### Android
 The mobile appendix is generated automatically for Android builds, right after Unity exports the application bundle.  
 
-#### iOS
-Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.
+#### iOS/tvOS
+Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS/tvOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.
 
 <img src="Documentation~/images/MobileiOSPrompt.png" width="400">
 
@@ -76,4 +77,4 @@ To generate a development .ipa bundle:
 
 Once these steps are complete, an .ipa bundle will be inside the directory, saved in step 7.  
 This process can also be automated using the `xcodebuild` command line tool.  
-After the .ipa bundle is provided, the iOS-specific information is added to the BuildReportInspector UI automatically.
+After the .ipa bundle is provided, the report information is added to the BuildReportInspector UI automatically.
