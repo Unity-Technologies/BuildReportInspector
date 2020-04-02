@@ -10,10 +10,7 @@ namespace Unity.BuildReportInspector.Mobile
     {
         internal static IPlatformUtilities s_PlatformUtilities;
 
-        internal static string AppendixSavePath
-        {
-            get { return Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Library/MobileReports"); }
-        }
+        internal static string AppendixSavePath => Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Assets/BuildReports/Mobile");
 
         internal static void RegisterPlatformUtilities(IPlatformUtilities utilities)
         {
@@ -49,7 +46,7 @@ namespace Unity.BuildReportInspector.Mobile
                         var applicationGuid = reader.ReadToEnd();
                         if (applicationGuid != guid)
                         {
-                            Debug.LogErrorFormat("The GUID of the selected report does not match the GUID of the provided application.\nExpected: {0} but got: {1}.", guid, applicationGuid);
+                            Debug.LogError($"The GUID of the selected report does not match the GUID of the provided application.\nExpected: {guid} but got: {applicationGuid}.");
                             return;
                         }
                     }

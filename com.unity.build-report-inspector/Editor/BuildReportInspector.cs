@@ -1,11 +1,13 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+#if UNITY_2019_3_OR_NEWER
 using Unity.BuildReportInspector.Mobile;
-using System.IO;
+#endif
 using Object = UnityEngine.Object;
 
 namespace Unity.BuildReportInspector
@@ -39,12 +41,12 @@ namespace Unity.BuildReportInspector
         {
             get { return target as BuildReport; }
         }
-
+#if UNITY_2019_3_OR_NEWER
         private MobileAppendix mobileAppendix
         {
             get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
-
+#endif // UNITY_2019_3_OR_NEWER
         private static GUIStyle s_SizeStyle;
 
         private static GUIStyle SizeStyle {
@@ -170,11 +172,17 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("    Build Name: ", Application.productName);
             EditorGUILayout.LabelField("    Platform: ", report.summary.platform.ToString());
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
+#if UNITY_2019_3_OR_NEWER
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
-            
+
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
+#else
+            EditorGUILayout.LabelField("    Total Size: ", FormatSize(report.summary.totalSize));
+            EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
+#endif // UNITY_2019_3_OR_NEWER
+            
 
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
 
@@ -182,7 +190,7 @@ namespace Unity.BuildReportInspector
             {
                 sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", sourceDispMode);
             }
-
+#if UNITY_2019_3_OR_NEWER
             if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
@@ -191,6 +199,7 @@ namespace Unity.BuildReportInspector
                 GUILayout.Label("Compressed size", SizeStyle);
                 GUILayout.EndHorizontal();
             }
+#endif // UNITY_2019_3_OR_NEWER
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             switch(mode)
             {
@@ -205,10 +214,14 @@ namespace Unity.BuildReportInspector
 #endif // UNITY_2019_3_OR_NEWER
                     break;
                 case ReportDisplayMode.OutputFiles:
+#if UNITY_2019_3_OR_NEWER
                     if (mobileAppendix == null)
                         OnOutputFilesGUI();
                     else
                         OnMobileOutputFilesGUI();
+#else
+                    OnOutputFilesGUI();
+#endif // UNITY_2019_3_OR_NEWER
                     break;
                 case ReportDisplayMode.Stripping:
                     OnStrippingGUI();
@@ -342,6 +355,7 @@ namespace Unity.BuildReportInspector
             }
         }
 
+#if UNITY_2019_3_OR_NEWER
         private void OnMobileAppendixGUI()
         {
             if (mobileAppendix != null)
@@ -379,6 +393,7 @@ namespace Unity.BuildReportInspector
             }
 #endif // UNITY_EDITOR_OSX
         }
+#endif // UNITY_2019_3_OR_NEWER
 
         BuildStepNode rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
@@ -658,6 +673,7 @@ namespace Unity.BuildReportInspector
             }
         }
 
+#if UNITY_2019_3_OR_NEWER
         private void OnMobileOutputFilesGUI()
         {
             var longestCommonRoot = mobileAppendix.Files[0].Path;
@@ -688,6 +704,7 @@ namespace Unity.BuildReportInspector
             
             }
         }
+#endif // #if UNITY_2019_3_OR_NEWER
 
         Dictionary<string, Texture> strippingIcons = new Dictionary<string, Texture>();
         Dictionary<string, int> strippingSizes = new Dictionary<string, int>();

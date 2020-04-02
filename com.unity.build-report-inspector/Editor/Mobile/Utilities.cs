@@ -7,7 +7,7 @@ namespace Unity.BuildReportInspector.Mobile
 {
     internal static class Utilities
     {
-        internal static string RunProcessAndGetOutput(string executable, string arguments, out string error, out int exitCode)
+        internal static string RunProcessAndGetOutput(string executable, string arguments, out int exitCode)
         {
             using (var p = new Process())
             {
@@ -17,11 +17,13 @@ namespace Unity.BuildReportInspector.Mobile
                 p.StartInfo.CreateNoWindow = true;
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.RedirectStandardError = true;
+                var output = string.Empty;
+                p.OutputDataReceived += (sender, e) => { output += $"{e.Data}{Environment.NewLine}"; };
+                p.ErrorDataReceived += (sender, e) => { output += $"{e.Data}{Environment.NewLine}"; };
                 p.Start();
-                var output = p.StandardOutput.ReadToEnd();
-                error = p.StandardError.ReadToEnd();
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
                 p.WaitForExit();
-
                 exitCode = p.ExitCode;
                 return output;
             }
