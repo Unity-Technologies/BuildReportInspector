@@ -17,7 +17,7 @@
     "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS",
-        "UNITY_2019_3_OR_NEWER"
+        "UNITY_2019_1_OR_NEWER"
     ],
     "versionDefines": [],
     "noEngineReferences": false
