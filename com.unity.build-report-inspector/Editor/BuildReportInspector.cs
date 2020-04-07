@@ -207,11 +207,11 @@ namespace Unity.BuildReportInspector
                     OnBuildStepGUI();
                     break;
                 case ReportDisplayMode.SourceAssets:
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
                     OnAssetsGUI();
 #else
                     OnOldAssetsGUI();
-#endif // UNITY_2019_1_OR_NEWER
+#endif // UNITY_2019_3_OR_NEWER
                     break;
                 case ReportDisplayMode.OutputFiles:
 #if UNITY_2019_1_OR_NEWER
@@ -479,7 +479,7 @@ namespace Unity.BuildReportInspector
         Dictionary<string, int> outputFiles;
         Dictionary<string, int> assetTypes;
 
-#if !UNITY_2019_1_OR_NEWER
+#if !UNITY_2019_3_OR_NEWER
         private void OnOldAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -549,9 +549,9 @@ namespace Unity.BuildReportInspector
             else 
                 GUILayout.Label("No Appendices property found");
         }
-#endif // !UNITY_2019_1_OR_NEWER
+#endif // !UNITY_2019_3_OR_NEWER
 
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
         private void OnAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -592,7 +592,7 @@ namespace Unity.BuildReportInspector
             }
             DisplayAssetsView(vPos);
         }
-#endif // UNITY_2019_1_OR_NEWER
+#endif // UNITY_2019_3_OR_NEWER
 
         private void DisplayAssetsView(float vPos)
         {
