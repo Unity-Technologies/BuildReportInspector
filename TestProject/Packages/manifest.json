@@ -1,7 +1,8 @@
 {
   "disableProjectUpdate": true,
   "dependencies": {
-    "com.unity.build-report-inspector": "file:../../com.unity.build-report-inspector"
+    "com.unity.build-report-inspector": "file:../../com.unity.build-report-inspector",
+    "com.unity.test-framework": "1.1.13"
   },
   "testables": [
     "com.unity.build-report-inspector"
