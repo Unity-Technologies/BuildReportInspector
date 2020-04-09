@@ -34,9 +34,9 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     - ln -s $ANDROID_SDK_ROOT .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/NDK
 {% endif %}
 {% if platform.os == 'Windows' %}
-    - xcopy /e /q /b %ANDROID_NDK_ROOT% .Editor\Data\PlaybackEngines\AndroidPlayer\NDK\
-    - xcopy /e /q /b %JAVA_HOME% .Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\
-    - xcopy /e /q /b %ANDROID_SDK_ROOT% .Editor\Data\PlaybackEngines\AndroidPlayer\SDK\
+    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\NDK %ANDROID_NDK_ROOT%
+    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK %JAVA_HOME%
+    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\SDK %ANDROID_SDK_ROOT%
 {% endif %}
     - ./{{ platform.utr }} --suite=editor --editor-location=.Editor --testproject=TestProject --artifacts_path=logs
   artifacts:
