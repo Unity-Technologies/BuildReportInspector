@@ -7,6 +7,8 @@ namespace Unity.BuildReportInspector.Mobile
 {
     internal static class Utilities
     {
+        public static bool IsTestEnvironment => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID"));
+
         internal static string RunProcessAndGetOutput(string executable, string arguments, out int exitCode)
         {
             using (var p = new Process())

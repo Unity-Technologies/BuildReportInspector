@@ -18,8 +18,6 @@ namespace Unity.BuildReportInspector.Mobile
             Aab
         }
 
-        private static bool IsTestEnvironment => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BOKKEN_RESOURCEID"));
-
         private static string JdkPath => AndroidExternalToolsSettings.jdkRootPath;
 
         private static string SdkPath => AndroidExternalToolsSettings.sdkRootPath;
@@ -171,7 +169,7 @@ namespace Unity.BuildReportInspector.Mobile
         private static long GetApkDownloadSize(string applicationPath)
         {
             string apkAnalyzerPath;
-            if (IsTestEnvironment)
+            if (Utilities.IsTestEnvironment)
             {
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
                 if (!Directory.Exists(sdkEnv))

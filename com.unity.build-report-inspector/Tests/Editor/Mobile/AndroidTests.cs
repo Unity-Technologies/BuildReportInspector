@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Unity.BuildReportInspector.Mobile;
@@ -52,6 +53,14 @@ public class AndroidTests
     public void Setup()
     {
         m_BuildPath = Utilities.GetTemporaryFolder();
+        if (!Utilities.IsTestEnvironment)
+            return;
+
+        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+#if UNITY_ANDROID
+        UnityEditor.Android.AndroidExternalToolsSettings.sdkRootPath = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
+        UnityEditor.Android.AndroidExternalToolsSettings.ndkRootPath = Environment.GetEnvironmentVariable("ANDROID_NDK_ROOT");
+#endif
     }
 
     [OneTimeTearDown]
