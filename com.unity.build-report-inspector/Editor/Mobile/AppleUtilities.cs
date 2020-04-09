@@ -107,13 +107,5 @@ namespace Unity.BuildReportInspector.Mobile
                 Directory.Delete(temporaryFolder, true);
             }
         }
-
-#if UNITY_IOS || UNITY_TVOS
-        [InitializeOnLoadMethod]
-        private static void Initialize()
-        {
-            MobileHelper.RegisterPlatformUtilities(new AppleUtilities());
-        }
-#endif // UNITY_IOS || UNITY_TVOS
     }
 }

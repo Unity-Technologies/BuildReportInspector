@@ -77,7 +77,6 @@ public class AndroidTests
         };
 
         var report = BuildPipeline.BuildPlayer(options);
-        Debug.Log(report.summary.result);
         return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
     }
 }

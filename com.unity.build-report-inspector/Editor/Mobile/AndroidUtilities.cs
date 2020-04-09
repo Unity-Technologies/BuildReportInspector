@@ -1,4 +1,3 @@
-#if UNITY_ANDROID
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,33 +17,41 @@ namespace Unity.BuildReportInspector.Mobile
             Aab
         }
 
-        private static string JdkPath => AndroidExternalToolsSettings.jdkRootPath;
+        private static string AndroidToolRoot
+        {
+            get
+            {
+                var editorDir = Directory.GetParent(EditorApplication.applicationPath).FullName;
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_LINUX
+                return Utilities.Combine(editorDir, "Data", "PlaybackEngines", "AndroidPlayer");
+#else
+                var androidToolPath = Utilities.Combine(EditorApplication.applicationPath, "Contents", "PlaybackEngines", "AndroidPlayer");
+                if (!Directory.Exists(androidToolPath))
+                {
+                    androidToolPath =  Utilities.Combine(editorDir, "PlaybackEngines", "AndroidPlayer");
+                }
+                return androidToolPath;
+#endif
+            }
+        }
 
-        private static string SdkPath => AndroidExternalToolsSettings.sdkRootPath;
+        private static string JdkPath => Path.Combine(AndroidToolRoot, "OpenJDK");
+        private static string SdkPath => Path.Combine(AndroidToolRoot, "SDK");
 
         private static string GetBundleToolPath()
         {
-            var editorDir = Directory.GetParent(EditorApplication.applicationPath).FullName;
-#if UNITY_EDITOR_WIN || UNITY_EDITOR_LINUX
-            var androidToolPath = Path.Combine(editorDir, "Data", "PlaybackEngines", "AndroidPlayer", "Tools");
-#else
-            var androidToolPath = Utilities.Combine(EditorApplication.applicationPath, "Contents", "PlaybackEngines", "AndroidPlayer", "Tools");
-            if (!Directory.Exists(androidToolPath))
-            {
-                androidToolPath =  Utilities.Combine(editorDir, "PlaybackEngines", "AndroidPlayer", "Tools");
-            }
-#endif
-            var bundleToolName = Directory.GetFiles(androidToolPath, "bundletool*jar").SingleOrDefault();
+            var bundleRoot = Path.Combine(AndroidToolRoot, "Tools");
+            var bundleToolName = Directory.GetFiles(bundleRoot, "bundletool*jar").SingleOrDefault();
             if (!string.IsNullOrEmpty(bundleToolName))
                 return bundleToolName;
 
-            throw new FileNotFoundException($"bundletool*.jar not found at {androidToolPath}");
+            throw new FileNotFoundException($"bundletool*.jar not found at {bundleRoot}");
         }
 
         private static string GetJavaExecutablePath()
         {
             if (string.IsNullOrEmpty(JdkPath) || !Directory.Exists(JdkPath))
-                throw new DirectoryNotFoundException("Could not resolve Java directory. Please install Java through Unity Hub.");
+                throw new DirectoryNotFoundException($"Could not resolve Java directory. Please install Java through Unity Hub.");
 
             var javaExecutable = Utilities.Combine(JdkPath, "bin", "java");
 #if UNITY_EDITOR_WIN
@@ -233,12 +240,5 @@ namespace Unity.BuildReportInspector.Mobile
                 "urces.jar;{0}\\lib\\guava-22.0.jar", appHome);
             return $"{defaultJvmOpts} -classpath {classPath} com.android.tools.apk.analyzer.ApkAnalyzerCli";
         }
-
-        [InitializeOnLoadMethod]
-        private static void Initialize()
-        {
-            MobileHelper.RegisterPlatformUtilities(new AndroidUtilities());
-        }
     }
 }
-#endif // UNITY_ANDROID

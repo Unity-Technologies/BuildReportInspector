@@ -17,14 +17,12 @@ namespace Unity.BuildReportInspector.Mobile
             if (!Directory.Exists(AppendixSavePath))
                 Directory.CreateDirectory(AppendixSavePath);
 
-            if (s_PlatformUtilities != null)
-                throw new Exception("IPlatformUtilities already registered!");
-
             s_PlatformUtilities = utilities;
         }
 
         internal static void GenerateAndroidAppendix(string applicationPath, string guid)
         {
+            MobileHelper.RegisterPlatformUtilities(new AndroidUtilities());
             GenerateMobileAppendix(applicationPath, guid);
         }
 
@@ -32,6 +30,7 @@ namespace Unity.BuildReportInspector.Mobile
         {
             try
             {
+                MobileHelper.RegisterPlatformUtilities(new AppleUtilities());
                 using (var archive = ZipFile.OpenRead(applicationPath))
                 {
                     var guidFile = archive.Entries.FirstOrDefault(x => x.Name == "UnityBuildGuid.txt");
