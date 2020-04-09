@@ -39,6 +39,6 @@ test_mobile_all:
   dependencies:
 {% for editor in test_editors %}
 {% for platform in test_platforms %}
-    - .yamato/mobile_test.yml#test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}
+    - .yamato/mobile-tests.yml#test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}
 {% endfor %}
 {% endfor %}
