@@ -43,8 +43,6 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     logs:
       paths:
         - "logs/**"
-  dependencies:
-    - .yamato/upm-ci.yml#pack
 {% endfor %}
 {% endfor %}
 
