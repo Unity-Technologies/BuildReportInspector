@@ -1,5 +1,4 @@
-﻿#if UNITY_ANDROID
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Unity.BuildReportInspector.Mobile;
@@ -81,4 +80,3 @@ public class AndroidTests
         return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
     }
 }
-#endif // UNITY_ANDROID

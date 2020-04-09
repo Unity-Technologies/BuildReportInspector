@@ -1,0 +1,44 @@
+test_editors:
+  - version: 2019.3
+  - version: trunk 
+test_platforms:
+  - os: Windows
+    target: Android
+    type: Unity::VM
+    image: mobile/android-execution-r19:stable
+    flavor: b1.large
+  - os: macOS
+    target: Android
+    type: Unity::VM::osx
+    image: mobile/android-macos-r19:stable
+    flavor: b1.large
+---
+{% for editor in test_editors %}
+{% for platform in test_platforms %}
+test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
+  name : Test {{ platform.target }} on {{ platform.os }} ({{ editor.version }})
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor}}
+  commands:
+    - pip install unity-downloader-cli --extra-index-url https://artifactory.eu-cph-1.unityops.net/api/pypi/common-python/simple
+    - unity-downloader-cli -c Editor -c Android -u trunk --fast
+    - ./utr --suite=editor --editor-location=.Editor --testproject=TestProject --artifacts_path=logs
+  artifacts:
+    logs:
+      paths:
+        - "logs/**"
+  dependencies:
+    - .yamato/upm-ci.yml#pack
+{% endfor %}
+{% endfor %}
+
+test_mobile_all:
+  name: Run all mobile tests
+  dependencies:
+{% for editor in test_editors %}
+{% for platform in test_platforms %}
+    - .yamato/mobile_test.yml#test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}
+{% endfor %}
+{% endfor %}
