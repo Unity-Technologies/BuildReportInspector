@@ -29,8 +29,16 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     - curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/{{ platform.utr }} --output {{ platform.utr }}
 {% if platform.os == 'macOS' %}
     - chmod +x ./{{ platform.utr }}
+    - ln -s $ANDROID_NDK_ROOT .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/NDK
+    - ln -s $JAVA_HOME .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/OpenJDK
+    - ln -s $ANDROID_SDK_ROOT .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/NDK
 {% endif %}
-    - ./utr --suite=editor --editor-location=.Editor --testproject=TestProject --artifacts_path=logs
+{% if platform.os == 'Windows' %}
+    - xcopy /e /q /b %ANDROID_NDK_ROOT% .Editor\Data\PlaybackEngines\AndroidPlayer\NDK\
+    - xcopy /e /q /b %JAVA_HOME% .Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK\
+    - xcopy /e /q /b %ANDROID_SDK_ROOT% .Editor\Data\PlaybackEngines\AndroidPlayer\SDK\
+{% endif %}
+    - ./{{ platform.utr }} --suite=editor --editor-location=.Editor --testproject=TestProject --artifacts_path=logs
   artifacts:
     logs:
       paths:
