@@ -1,4 +1,3 @@
-#if UNITY_ANDROID || UNITY_IOS || UNITY_TVOS
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -11,8 +10,8 @@ namespace Unity.BuildReportInspector.Mobile
     {
         private const string k_GuidFileName = "UnityBuildGuid.txt";
         private static string s_LastBuildGuid;
+        public int callbackOrder => 0;
 
-        public int callbackOrder { get { return 0; } }
         public void OnPreprocessBuild(BuildReport report)
         {
             s_LastBuildGuid = null;
@@ -38,7 +37,7 @@ namespace Unity.BuildReportInspector.Mobile
         [PostProcessBuildAttribute(1)]
         private static void BuildPostProcess(BuildTarget target, string applicationPath)
         {
-            if (!File.Exists(applicationPath) || target != BuildTarget.Android || s_LastBuildGuid == null)
+            if (!File.Exists(applicationPath) || target != BuildTarget.Android || string.IsNullOrEmpty(s_LastBuildGuid))
                 return;
 
             // On Android, generate the mobile appendix right after the build finishes.
@@ -46,4 +45,3 @@ namespace Unity.BuildReportInspector.Mobile
         }
     }
 }
-#endif // UNITY_ANDROID || UNITY_IOS || UNITY_TVOS
