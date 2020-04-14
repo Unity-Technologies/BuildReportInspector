@@ -49,6 +49,7 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
 test_mobile_all:
   name: Run all mobile tests
   dependencies:
+    - .yamato/upm-ci.yml#pack
 {% for editor in test_editors %}
 {% for platform in test_platforms %}
     - .yamato/mobile-tests.yml#test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}
