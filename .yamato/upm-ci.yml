@@ -86,6 +86,7 @@ test_trigger:
     {% endfor %}
     {% endfor %}
 #    - .yamato/upm-ci.yml#test_simple
+    - .yamato/mobile-tests.yml#test_mobile_all
     
 publish:
   name: Publish to Internal Registry
