@@ -1,6 +1,7 @@
 test_editors:
-  - version: 2019.1
-  - version: trunk  
+  - version: 2018.4
+  - version: 2019.3
+  - version: trunk
 test_platforms:
   - name: win
     type: Unity::VM
@@ -75,3 +76,4 @@ promote:
     - .yamato/promotion.yml#promotion_test_{{ platform.name }}_{{ editor.version }}
 {% endfor %}
 {% endfor %}
+    - .yamato/mobile-tests.yml#test_mobile_all

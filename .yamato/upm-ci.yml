@@ -1,5 +1,6 @@
 test_editors:
-  - version: 2019.1
+  - version: 2018.4
+  - version: 2019.3
   - version: trunk
 test_platforms:
   - name: win
@@ -111,3 +112,4 @@ publish:
     {% endfor %}
     {% endfor %}
 #    - .yamato/upm-ci.yml#test_simple
+    - .yamato/mobile-tests.yml#test_mobile_all
