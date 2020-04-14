@@ -43,10 +43,10 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     logs:
       paths:
         - "logs/**"
-{% endfor %}
-{% endfor %}
   dependencies:
     - .yamato/upm-ci.yml#pack
+{% endfor %}
+{% endfor %}
 
 test_mobile_all:
   name: Run all mobile tests
