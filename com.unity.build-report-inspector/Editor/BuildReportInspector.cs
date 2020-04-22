@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
-#if UNITY_2019_1_OR_NEWER
+using Object = UnityEngine.Object;
+#if UNITY_2019_3_OR_NEWER
 using Unity.BuildReportInspector.Mobile;
 #endif
-using Object = UnityEngine.Object;
 
 namespace Unity.BuildReportInspector
 {
@@ -42,7 +42,7 @@ namespace Unity.BuildReportInspector
             get { return target as BuildReport; }
         }
 
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
         private bool appendixLoaded;
         private MobileAppendix m_MobileAppendix;
         private MobileAppendix mobileAppendix
@@ -57,7 +57,7 @@ namespace Unity.BuildReportInspector
                 return m_MobileAppendix;
             }
         }
-#endif // UNITY_2019_1_OR_NEWER
+#endif // UNITY_2019_3_OR_NEWER
 
         private static GUIStyle s_SizeStyle;
 
@@ -184,7 +184,7 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("    Build Name: ", Application.productName);
             EditorGUILayout.LabelField("    Platform: ", report.summary.platform.ToString());
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
 
@@ -193,7 +193,7 @@ namespace Unity.BuildReportInspector
 #else
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(report.summary.totalSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
-#endif // UNITY_2019_1_OR_NEWER
+#endif
             
 
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
@@ -202,7 +202,7 @@ namespace Unity.BuildReportInspector
             {
                 sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", sourceDispMode);
             }
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
             if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
@@ -211,7 +211,7 @@ namespace Unity.BuildReportInspector
                 GUILayout.Label("Compressed size", SizeStyle);
                 GUILayout.EndHorizontal();
             }
-#endif // UNITY_2019_1_OR_NEWER
+#endif
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             switch(mode)
             {
@@ -223,17 +223,17 @@ namespace Unity.BuildReportInspector
                     OnAssetsGUI();
 #else
                     OnOldAssetsGUI();
-#endif // UNITY_2019_3_OR_NEWER
+#endif
                     break;
                 case ReportDisplayMode.OutputFiles:
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
                     if (mobileAppendix == null)
                         OnOutputFilesGUI();
                     else
                         OnMobileOutputFilesGUI();
 #else
                     OnOutputFilesGUI();
-#endif // UNITY_2019_1_OR_NEWER
+#endif
                     break;
                 case ReportDisplayMode.Stripping:
                     OnStrippingGUI();
@@ -367,7 +367,7 @@ namespace Unity.BuildReportInspector
             }
         }
 
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
         private void OnMobileAppendixGUI()
         {
             if (mobileAppendix != null)
@@ -405,7 +405,7 @@ namespace Unity.BuildReportInspector
             }
 #endif // UNITY_EDITOR_OSX
         }
-#endif // UNITY_2019_1_OR_NEWER
+#endif // UNITY_2019_3_OR_NEWER
 
         BuildStepNode rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
@@ -685,7 +685,7 @@ namespace Unity.BuildReportInspector
             }
         }
 
-#if UNITY_2019_1_OR_NEWER
+#if UNITY_2019_3_OR_NEWER
         private void OnMobileOutputFilesGUI()
         {
             var longestCommonRoot = mobileAppendix.Files[0].Path;
@@ -716,7 +716,7 @@ namespace Unity.BuildReportInspector
             
             }
         }
-#endif // #if UNITY_2019_1_OR_NEWER
+#endif // UNITY_2019_3_OR_NEWER
 
         Dictionary<string, Texture> strippingIcons = new Dictionary<string, Texture>();
         Dictionary<string, int> strippingSizes = new Dictionary<string, int>();
