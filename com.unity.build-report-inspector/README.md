@@ -52,8 +52,8 @@ When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](h
 <img src="Documentation~/images/ScenesUsingAssets.png" width="400">
 
 ### Mobile
-[Available from Unity 2019.1]  
-The BuildReport API is not very good at reporting data from mobile builds. For this reason, starting at Unity 2019.1, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS).
+[Available from Unity 2019.3]  
+The BuildReport API is not very good at reporting data from mobile builds. For this reason, starting at Unity 2019.3, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS).
 
 <img src="Documentation~/images/MobileAppendix.png" width="400">
 

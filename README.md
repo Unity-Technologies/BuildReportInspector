@@ -12,7 +12,6 @@ Disclaimer
 This package is provided as-is, with no support from Unity Technologies. We plan to add a built-in and supported UI for the BuildReport feature in a future version of Unity, but until then, this package serves as a demonstration on how you can access the BuildReport information today.
 
 In particular, this package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html), but some information in the BuildReport object is not yet exposed through public APIs.  
-This package uses the SerializedObject class to access some of those internals through Unity's serialization system. Since internal data structures are subject to change, this package may stop working in future versions of Unity.
 
 
 Usage
@@ -55,7 +54,8 @@ When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](h
 <img src="com.unity.build-report-inspector/Documentation~/images/ScenesUsingAssets.png" width="400">
 
 ### Mobile
-The BuildReport API is not very good at reporting data from mobile builds. For this reason, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS).
+[Available from Unity 2019.3]  
+The BuildReport API is not very good at reporting data from mobile builds. For this reason, starting at Unity 2019.3, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS).
 
 <img src="com.unity.build-report-inspector/Documentation~/images/MobileAppendix.png" width="400">
 
