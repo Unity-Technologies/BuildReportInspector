@@ -41,12 +41,24 @@ namespace Unity.BuildReportInspector
         {
             get { return target as BuildReport; }
         }
+
 #if UNITY_2019_1_OR_NEWER
+        private bool appendixLoaded;
+        private MobileAppendix m_MobileAppendix;
         private MobileAppendix mobileAppendix
         {
-            get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
+            get
+            {
+                if (appendixLoaded) 
+                    return m_MobileAppendix;
+                m_MobileAppendix = MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
+                appendixLoaded = true;
+
+                return m_MobileAppendix;
+            }
         }
 #endif // UNITY_2019_1_OR_NEWER
+
         private static GUIStyle s_SizeStyle;
 
         private static GUIStyle SizeStyle {

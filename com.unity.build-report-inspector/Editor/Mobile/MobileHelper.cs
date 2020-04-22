@@ -80,10 +80,6 @@ namespace Unity.BuildReportInspector.Mobile
         internal static MobileAppendix LoadMobileAppendix(string guid)
         {
             var appendixFile = Path.Combine(AppendixSavePath, guid);
-            if (!File.Exists(appendixFile))
-            {
-                Debug.LogError($"The appendix file does not exist at {appendixFile}.");
-            }
             return File.Exists(appendixFile) ? MobileAppendix.Load(appendixFile) : null;
         }
     }
