@@ -1,7 +1,16 @@
 {
     "name": "Unity.BuildReportInspector.Editor",
+    "references": [
+        "Unity.BuildReportInspector.Editor.Mobile"
+    ],
+    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": []
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
 }

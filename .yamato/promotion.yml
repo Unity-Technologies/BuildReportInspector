@@ -1,6 +1,7 @@
 test_editors:
-  - version: 2019.1
-  - version: trunk  
+  - version: 2018.4
+  - version: 2019.3
+  - version: trunk
 test_platforms:
   - name: win
     type: Unity::VM
@@ -31,17 +32,6 @@ promotion_test_{{ platform.name }}_{{ editor.version }}:
 
 promotion_test_trigger:
   name: Promotion Tests Trigger
-  agent:
-    type: Unity::VM
-    image: package-ci/win10:stable
-    flavor: b1.large
-  artifacts:
-    logs:
-      paths:
-        - "upm-ci~/test-results/**/*"
-    packages:
-      paths:
-        - "upm-ci~/packages/**/*"
   dependencies:
 {% for editor in test_editors %}
 {% for platform in test_platforms %}
@@ -75,3 +65,4 @@ promote:
     - .yamato/promotion.yml#promotion_test_{{ platform.name }}_{{ editor.version }}
 {% endfor %}
 {% endfor %}
+    - .yamato/mobile-tests.yml#test_mobile_all

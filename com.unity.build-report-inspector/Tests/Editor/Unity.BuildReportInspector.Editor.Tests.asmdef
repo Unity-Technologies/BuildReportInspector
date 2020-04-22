@@ -1,0 +1,20 @@
+﻿{
+	"name": "Unity.BuildReportInspector.Editor.Tests",
+	"references": [],
+	"optionalUnityReferences": [
+		"TestAssemblies"
+	],
+	"includePlatforms": [
+		"Editor"
+	],
+	"excludePlatforms": [],
+	"allowUnsafeCode": false,
+	"overrideReferences": true,
+	"precompiledReferences": [],
+	"autoReferenced": false,
+	"defineConstraints": [
+		"UNITY_INCLUDE_TESTS"
+	],
+	"versionDefines": [],
+	"noEngineReferences": false
+}
