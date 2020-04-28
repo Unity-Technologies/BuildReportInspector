@@ -38,24 +38,6 @@ namespace Unity.BuildReportInspector.Mobile
             }
         }
 
-        private static string GuessToolPath(string nameKey, string embeddedKey, string toolName)
-        {
-            if (EditorPrefs.GetBool(embeddedKey))
-            {
-                var hubVersion = Path.Combine(AndroidToolRoot, toolName);
-                if (Directory.Exists(hubVersion))
-                    return hubVersion;
-            }
-            else
-            {
-                var custom = EditorPrefs.GetString(nameKey);
-                if (Directory.Exists(custom))
-                    return custom;
-            }
-
-            return null;
-        }
-
         private static string JdkPath
         {
             get
@@ -63,7 +45,7 @@ namespace Unity.BuildReportInspector.Mobile
 #if UNITY_ANDROID
                 return AndroidExternalToolsSettings.jdkRootPath;
 #else
-                return GuessToolPath("JdkPath", "JdkUseEmbedded", "OpenJDK");
+                return GuessToolPath("JdkPath", "OpenJDK");
 #endif
             }
         }
@@ -75,9 +57,20 @@ namespace Unity.BuildReportInspector.Mobile
 #if UNITY_ANDROID
                 return AndroidExternalToolsSettings.sdkRootPath;
 #else
-                return GuessToolPath("AndroidSdkRoot", "SdkUseEmbedded", "SDK");
+                return GuessToolPath("AndroidSdkRoot", "SDK");
 #endif
             }
+        }
+
+        private static string GuessToolPath(string nameKey, string toolName)
+        {
+            var hubVersion = Path.Combine(AndroidToolRoot, toolName);
+            if (Directory.Exists(hubVersion))
+                return hubVersion;
+
+
+            var custom = EditorPrefs.GetString(nameKey);
+            return Directory.Exists(custom) ? custom : null;
         }
 
         private static string GetBundleToolPath()
