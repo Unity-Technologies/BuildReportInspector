@@ -6,6 +6,9 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEngine;
+#if UNITY_ANDROID
+using UnityEditor.Android;
+#endif
 
 namespace Unity.BuildReportInspector.Mobile
 {
@@ -35,8 +38,47 @@ namespace Unity.BuildReportInspector.Mobile
             }
         }
 
-        private static string JdkPath => Path.Combine(AndroidToolRoot, "OpenJDK");
-        private static string SdkPath => Path.Combine(AndroidToolRoot, "SDK");
+        private string GuessToolPath(string nameKey, string embeddedKey, string toolName)
+        {
+            if (EditorPrefs.GetBool(embeddedKey))
+            {
+                var hubVersion = Path.Combine(AndroidToolRoot, toolName);
+                if (Directory.Exists(hubVersion))
+                    return hubVersion;
+            }
+            else
+            {
+                var custom = EditorPrefs.GetString(nameKey);
+                if (Directory.Exists(custom))
+                    return custom;
+            }
+
+            return null;
+        }
+
+        private static string JdkPath
+        {
+            get
+            {
+#if UNITY_ANDROID
+                return AndroidExternalToolsSettings.jdkRootPath;
+#else
+                return GuessToolPath("JdkPath", "JdkUseEmbedded", "OpenJDK");
+#endif
+            }
+        }
+
+        private static string SdkPath
+        {
+            get
+            {
+#if UNITY_ANDROID
+                return AndroidExternalToolsSettings.sdkRootPath;
+#else
+                return GuessToolPath("AndroidSdkRoot", "SdkUseEmbedded", "SDK");
+#endif
+            }
+        }
 
         private static string GetBundleToolPath()
         {
