@@ -38,7 +38,7 @@ namespace Unity.BuildReportInspector.Mobile
             }
         }
 
-        private string GuessToolPath(string nameKey, string embeddedKey, string toolName)
+        private static string GuessToolPath(string nameKey, string embeddedKey, string toolName)
         {
             if (EditorPrefs.GetBool(embeddedKey))
             {
