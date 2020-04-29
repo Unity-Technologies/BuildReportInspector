@@ -646,6 +646,9 @@ namespace Unity.BuildReportInspector
 
         private void OnOutputFilesGUI()
         {
+            if (report.files.Length == 0)
+                return;
+
             var longestCommonRoot = report.files[0].path;
             var tempRoot = Path.GetFullPath("Temp");
             foreach (var file in report.files)
