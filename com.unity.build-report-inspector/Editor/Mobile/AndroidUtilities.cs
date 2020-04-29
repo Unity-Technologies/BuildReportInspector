@@ -6,9 +6,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEngine;
-#if UNITY_ANDROID
-using UnityEditor.Android;
-#endif
 
 namespace Unity.BuildReportInspector.Mobile
 {

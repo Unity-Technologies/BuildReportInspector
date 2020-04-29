@@ -43,19 +43,9 @@ namespace Unity.BuildReportInspector
         }
 
 #if UNITY_2019_3_OR_NEWER
-        private bool appendixLoaded;
-        private MobileAppendix m_MobileAppendix;
         private MobileAppendix mobileAppendix
-        {
-            get
-            {
-                if (appendixLoaded) 
-                    return m_MobileAppendix;
-                m_MobileAppendix = MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
-                appendixLoaded = true;
-
-                return m_MobileAppendix;
-            }
+        { 
+            get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
 #endif // UNITY_2019_3_OR_NEWER
 
@@ -311,11 +301,11 @@ namespace Unity.BuildReportInspector
                         var icon = "console.warnicon.sml";
                         if (worstChildrenLogType != LogType.Warning)
                             icon = "console.erroricon.sml";
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step.GetValueOrDefault().name, icon));
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step.GetValueOrDefault().name, icon), true);
                     }
                     else
                     {
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, step.GetValueOrDefault().name);
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, new GUIContent(step.GetValueOrDefault().name), true);
                     }
                 }
                 else
@@ -656,6 +646,9 @@ namespace Unity.BuildReportInspector
 
         private void OnOutputFilesGUI()
         {
+            if (report.files.Length == 0)
+                return;
+
             var longestCommonRoot = report.files[0].path;
             var tempRoot = Path.GetFullPath("Temp");
             foreach (var file in report.files)
