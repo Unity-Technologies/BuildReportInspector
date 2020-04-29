@@ -301,11 +301,11 @@ namespace Unity.BuildReportInspector
                         var icon = "console.warnicon.sml";
                         if (worstChildrenLogType != LogType.Warning)
                             icon = "console.erroricon.sml";
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step.GetValueOrDefault().name, icon));
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, EditorGUIUtility.TrTextContentWithIcon(step.GetValueOrDefault().name, icon), true);
                     }
                     else
                     {
-                        foldoutState = EditorGUILayout.Foldout(foldoutState, step.GetValueOrDefault().name);
+                        foldoutState = EditorGUILayout.Foldout(foldoutState, new GUIContent(step.GetValueOrDefault().name), true);
                     }
                 }
                 else
