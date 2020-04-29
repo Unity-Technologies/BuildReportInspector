@@ -43,19 +43,9 @@ namespace Unity.BuildReportInspector
         }
 
 #if UNITY_2019_3_OR_NEWER
-        private bool appendixLoaded;
-        private MobileAppendix m_MobileAppendix;
         private MobileAppendix mobileAppendix
-        {
-            get
-            {
-                if (appendixLoaded) 
-                    return m_MobileAppendix;
-                m_MobileAppendix = MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
-                appendixLoaded = true;
-
-                return m_MobileAppendix;
-            }
+        { 
+            get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
 #endif // UNITY_2019_3_OR_NEWER
 
