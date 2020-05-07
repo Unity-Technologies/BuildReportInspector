@@ -4,13 +4,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.2.1-preview] - 2020-04-02
+## [0.2.2-preview] - 2020-05-07
+
 ### Added
-- Add improved support for iOS, Apple TV and Android platforms.
+Add improved mobile support, which includes:
+- List the files inside the application bundle (.apk, .aab, .obb (Android), .ipa (iOS/tvOS)).
+- Show architectures supported by the build.
+- Show estimated App Store download size (iOS/tvOS/Android) per-architecture.
 
 ### Fixed
-- Fix #1 - incomplete Assets list shown when there are many entries.
-- Fix .NET 3.5 support.
+- Fix #1 - Assets tab not showing assets after 60+ entries.
+- Fix BuildSteps entry text overflowing vertically.
+- Fix blank entries in the Assets tab.
+- Fix .NET 3.5 support on 2018.4.
 
 ## [0.1.2-preview] - 2019-12-18
 
