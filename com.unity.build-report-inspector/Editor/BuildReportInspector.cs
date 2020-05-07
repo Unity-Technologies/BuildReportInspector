@@ -343,7 +343,9 @@ namespace Unity.BuildReportInspector
                             {
                                 GUILayout.Space(20 + indentPixels);
                                 GUILayout.Label(EditorGUIUtility.IconContent(icon), GUILayout.ExpandWidth(false));
-                                EditorGUILayout.LabelField(new GUIContent(message.content, message.content));
+                                var style = EditorStyles.label;
+                                style.wordWrap = true;
+                                EditorGUILayout.LabelField(new GUIContent(message.content, message.content), style);
                             }
                             GUILayout.EndHorizontal();
                             GUI.color = oldCol;
