@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Android;
 using UnityEngine;
+using Unity.BuildReportInspector.Mobile.ZipUtility;
 
 namespace Unity.BuildReportInspector.Mobile
 {
@@ -98,7 +98,7 @@ namespace Unity.BuildReportInspector.Mobile
         public MobileArchInfo[] GetArchitectureInfo(string applicationPath)
         {
             MobileArchInfo[] architectures;
-            using (var archive = ZipFile.OpenRead(applicationPath))
+            using (var archive = new ZipBundle(applicationPath))
             {
                 var archList = new List<MobileArchInfo>();
                 foreach (var file in archive.Entries)
@@ -140,7 +140,7 @@ namespace Unity.BuildReportInspector.Mobile
 
         private static ApplicationType GetApplicationType(string applicationPath)
         {
-            using (var archive = ZipFile.OpenRead(applicationPath))
+            using (var archive = new ZipBundle(applicationPath))
             {
                 if (archive.Entries.Any(x => x.FullName == "BundleConfig.pb"))
                 {

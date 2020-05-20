@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using Unity.BuildReportInspector.Mobile.ZipUtility;
 
 namespace Unity.BuildReportInspector.Mobile
 {
@@ -66,19 +66,19 @@ namespace Unity.BuildReportInspector.Mobile
             BuildSize = new FileInfo(applicationPath).Length;
 
             // Get the list of files inside of the app bundle from the zip header
-            using (var archive = ZipFile.OpenRead(applicationPath))
+            using (var archive = new ZipBundle(applicationPath))
             {
                 var files = new List<MobileFile>();
                 foreach (var entry in archive.Entries)
                 {
                     // Skip iOS/tvOS directory meta files
-                    if (entry.Length == 0)
+                    if (entry.CompressedSize == 0)
                         continue;
 
                     files.Add(new MobileFile(
                         entry.FullName,
-                        entry.CompressedLength,
-                        entry.Length));
+                        entry.CompressedSize,
+                        entry.UncompressedSize));
                 }
                 Files = files.ToArray();
             }
@@ -94,7 +94,7 @@ namespace Unity.BuildReportInspector.Mobile
         {
             try
             {
-                using (var archive = ZipFile.OpenRead(buildPath))
+                using (var archive = new ZipBundle(buildPath))
                 {
                     return archive.Entries.Any(x =>
                         x.FullName == "AndroidManifest.xml" ||

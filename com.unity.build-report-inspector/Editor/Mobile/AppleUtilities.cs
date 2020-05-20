@@ -1,10 +1,11 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using Debug = UnityEngine.Debug;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEditor;
+using Unity.BuildReportInspector.Mobile.ZipUtility;
 
 namespace Unity.BuildReportInspector.Mobile
 {
@@ -21,7 +22,7 @@ namespace Unity.BuildReportInspector.Mobile
             {
                 var frameworkFile = Path.Combine(temporaryFolder, "UnityFramework");
                 long appSizeNoFramework;
-                using (var archive = ZipFile.OpenRead(applicationPath))
+                using (var archive = new ZipBundle(applicationPath))
                 {
                     var unityFramework = archive.Entries.FirstOrDefault(x =>
                         x.FullName.EndsWith(k_UnityFrameworkRelativePath, StringComparison.InvariantCulture));
@@ -30,8 +31,8 @@ namespace Unity.BuildReportInspector.Mobile
                         throw new Exception("Failed to locate UnityFramework file in the build.");
                     }
 
-                    unityFramework.ExtractToFile(frameworkFile);
-                    appSizeNoFramework = new FileInfo(applicationPath).Length - unityFramework.CompressedLength;
+                    Utilities.UnzipFile(applicationPath, unityFramework.FullName, frameworkFile);
+                    appSizeNoFramework = new FileInfo(applicationPath).Length - unityFramework.CompressedSize;
                 }
 
                 var foundArchitectures = new List<string>();
