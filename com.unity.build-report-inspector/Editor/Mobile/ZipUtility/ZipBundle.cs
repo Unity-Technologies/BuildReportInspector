@@ -108,7 +108,7 @@ namespace Unity.BuildReportInspector.Mobile.ZipUtility
                 var compressedSize = ReadUInt(recordStart + (int)Markers.CompressedSize);
                 var uncompressedSize = ReadUInt(recordStart + (int)Markers.UncompressedSize);
                 var nameLength = ReadUShort(recordStart + (int)Markers.NameLength);
-                var extraLength = ReadUInt(recordStart + (int)Markers.ExtraLength);
+                var extraLength = ReadUShort(recordStart + (int)Markers.ExtraLength);
                 var commentLength = ReadUShort(recordStart + (int)Markers.CommentLength);
                 var name = ReadString(recordStart + (int)Markers.Name, nameLength);
                 Entries.Add(new ZipEntry(name, compressedSize, uncompressedSize));
