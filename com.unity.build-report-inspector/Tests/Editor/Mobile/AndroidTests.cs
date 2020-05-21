@@ -35,10 +35,6 @@ public class AndroidTests
         var appendix = BuildPlayer(ScriptingImplementation.IL2CPP, AndroidArchitecture.All, true);
 
         Assert.AreEqual(2, appendix.Architectures.Length, "Appendix contains unexpected architectures.");
-        foreach (var arch in appendix.Architectures)
-        {
-            Debug.Log(arch.Name);
-        }
         Assert.That(appendix.Architectures.Any(x => x.Name == "armeabi-v7a"), "Architecture armeabi-v7a not found in the appendix.");
         Assert.That(appendix.Architectures.Any(x => x.Name == "arm64-v8a"), "Architecture arm64-v8a not found in the appendix.");
 
