@@ -69,10 +69,8 @@ public class AndroidTests
         foreach (var guid in m_AppendixGuids)
         {
             var appendixPath = Path.Combine(MobileHelper.AppendixSavePath, guid);
-            var appendixMeta = $"{appendixPath}.meta";
-            Debug.Log(appendixPath);
             File.Delete(appendixPath);
-            File.Delete(appendixMeta);
+            File.Delete($"{appendixPath}.meta");
         }
     }
 
