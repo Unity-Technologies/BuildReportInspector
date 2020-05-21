@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -12,6 +13,7 @@ using UnityEngine;
 public class AndroidTests
 {
     private string m_BuildPath;
+    private List<string> m_AppendixGuids;
 
     [Test]
     public void Android_CanGenerateApkAppendix()
@@ -62,6 +64,16 @@ public class AndroidTests
         {
             Directory.Delete(m_BuildPath, true);
         }
+
+        if (m_AppendixGuids == null) return;
+        foreach (var guid in m_AppendixGuids)
+        {
+            var appendixPath = Path.Combine(MobileHelper.AppendixSavePath, guid);
+            var appendixMeta = $"{appendixPath}.meta";
+            Debug.Log(appendixPath);
+            File.Delete(appendixPath);
+            File.Delete(appendixMeta);
+        }
     }
 
     private MobileAppendix BuildPlayer(ScriptingImplementation backend, AndroidArchitecture architecture, bool buildAab)
@@ -77,6 +89,10 @@ public class AndroidTests
         };
 
         var report = BuildPipeline.BuildPlayer(options);
-        return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
+        if (m_AppendixGuids == null)
+            m_AppendixGuids = new List<string>();
+        var appendixGuid = report.summary.guid.ToString();
+        m_AppendixGuids.Add(appendixGuid);
+        return MobileHelper.LoadMobileAppendix(appendixGuid);
     }
 }
