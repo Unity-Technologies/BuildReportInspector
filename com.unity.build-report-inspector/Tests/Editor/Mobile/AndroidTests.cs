@@ -14,6 +14,9 @@ public class AndroidTests
 {
     private string m_BuildPath;
     private List<string> m_AppendixGuids;
+    private bool m_DeleteAppendixFolder;
+    private bool m_DeleteReportFolder;
+    private string m_ReportPath;
 
     [Test]
     public void Android_CanGenerateApkAppendix()
@@ -55,6 +58,9 @@ public class AndroidTests
     public void Setup()
     {
         m_BuildPath = Utilities.GetTemporaryFolder();
+        m_DeleteAppendixFolder = !Directory.Exists(MobileHelper.AppendixSavePath);
+        m_ReportPath = new DirectoryInfo(MobileHelper.AppendixSavePath).Parent?.FullName;
+        m_DeleteReportFolder = !Directory.Exists(m_ReportPath);
     }
 
     [OneTimeTearDown]
@@ -65,7 +71,23 @@ public class AndroidTests
             Directory.Delete(m_BuildPath, true);
         }
 
-        if (m_AppendixGuids == null) return;
+        if (m_DeleteReportFolder)
+        {
+            Directory.Delete(m_ReportPath, true);
+            File.Delete($"{m_ReportPath}.meta");
+            return;
+        }
+
+        if (m_DeleteAppendixFolder)
+        {
+            Directory.Delete(MobileHelper.AppendixSavePath);
+            File.Delete($"{MobileHelper.AppendixSavePath}.meta");
+            return;
+        }
+
+        if (m_AppendixGuids == null)
+            return;
+
         foreach (var guid in m_AppendixGuids)
         {
             var appendixPath = Path.Combine(MobileHelper.AppendixSavePath, guid);
