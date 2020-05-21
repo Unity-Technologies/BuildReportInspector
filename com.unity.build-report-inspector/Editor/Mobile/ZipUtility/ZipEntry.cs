@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Unity.BuildReportInspector.Mobile.ZipUtility
 {
-    public class ZipEntry
+    internal class ZipEntry
     {
         public string Name { get; }
         public string FullName { get; }

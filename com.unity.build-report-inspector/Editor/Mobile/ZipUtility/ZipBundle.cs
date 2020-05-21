@@ -17,7 +17,7 @@ namespace Unity.BuildReportInspector.Mobile.ZipUtility
         Name = 46
     }
 
-    public class ZipBundle : IDisposable
+    internal class ZipBundle : IDisposable
     {
         public string FullName { get; }
         public long Length { get; }
