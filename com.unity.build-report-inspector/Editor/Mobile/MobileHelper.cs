@@ -43,7 +43,7 @@ namespace Unity.BuildReportInspector.Mobile
                     }
 
                     var guidUnzipped = Path.Combine(temporaryFolder, "UnityBuildGuid.txt");
-                    Utilities.UnzipFile(applicationPath, guidFile.FullName, guidUnzipped);
+                    AppleUtilities.UnzipFile(applicationPath, guidFile.FullName, guidUnzipped);
                     using (var reader = new StreamReader(guidUnzipped))
                     {
                         var applicationGuid = reader.ReadToEnd();

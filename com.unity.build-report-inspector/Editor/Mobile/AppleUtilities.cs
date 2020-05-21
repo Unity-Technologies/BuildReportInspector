@@ -14,6 +14,7 @@ namespace Unity.BuildReportInspector.Mobile
         private const string k_UnityFrameworkRelativePath = "Frameworks/UnityFramework.framework/UnityFramework";
         private const string k_Size = "/usr/bin/size";
         private const string k_File = "/usr/bin/file";
+        private const string k_Unzip = "/usr/bin/unzip";
 
         public MobileArchInfo[] GetArchitectureInfo(string applicationPath)
         {
@@ -31,7 +32,7 @@ namespace Unity.BuildReportInspector.Mobile
                         throw new Exception("Failed to locate UnityFramework file in the build.");
                     }
 
-                    Utilities.UnzipFile(applicationPath, unityFramework.FullName, frameworkFile);
+                    UnzipFile(applicationPath, unityFramework.FullName, frameworkFile);
                     appSizeNoFramework = new FileInfo(applicationPath).Length - unityFramework.CompressedSize;
                 }
 
@@ -106,6 +107,43 @@ namespace Unity.BuildReportInspector.Mobile
             finally
             {
                 Directory.Delete(temporaryFolder, true);
+            }
+        }
+
+        /// <summary>
+        /// Unzip a file from a zip archive (macOS only).
+        /// </summary>
+        internal static void UnzipFile(string archivePath, string fileName, string destination)
+        {
+            using (var p = new Process())
+            {
+                p.StartInfo.FileName = k_Unzip;
+                p.StartInfo.Arguments = $"-p \"{archivePath}\" \"{fileName}\"";
+                p.StartInfo.UseShellExecute = false;
+                p.StartInfo.CreateNoWindow = true;
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.Start();
+                var baseStream = p.StandardOutput.BaseStream as FileStream;
+                byte[] fileBytes;
+                using (var memoryStream = new MemoryStream())
+                {
+                    var buffer = new byte[65536];
+                    int lastRead;
+                    do
+                    {
+                        lastRead = baseStream.Read(buffer, 0, buffer.Length);
+                        memoryStream.Write(buffer, 0, lastRead);
+                    } while (lastRead > 0);
+
+                    fileBytes = memoryStream.ToArray();
+                }
+
+                using (var fileStream = new FileStream(destination, FileMode.Create))
+                {
+                    fileStream.Write(fileBytes, 0, fileBytes.Length);
+                }
+                p.WaitForExit();
             }
         }
     }
