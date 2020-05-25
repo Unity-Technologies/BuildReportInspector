@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -12,6 +13,10 @@ using UnityEngine;
 public class AndroidTests
 {
     private string m_BuildPath;
+    private List<string> m_AppendixGuids;
+    private bool m_DeleteAppendixFolder;
+    private bool m_DeleteReportFolder;
+    private string m_ReportPath;
 
     [Test]
     public void Android_CanGenerateApkAppendix()
@@ -30,10 +35,6 @@ public class AndroidTests
         var appendix = BuildPlayer(ScriptingImplementation.IL2CPP, AndroidArchitecture.All, true);
 
         Assert.AreEqual(2, appendix.Architectures.Length, "Appendix contains unexpected architectures.");
-        foreach (var arch in appendix.Architectures)
-        {
-            Debug.Log(arch.Name);
-        }
         Assert.That(appendix.Architectures.Any(x => x.Name == "armeabi-v7a"), "Architecture armeabi-v7a not found in the appendix.");
         Assert.That(appendix.Architectures.Any(x => x.Name == "arm64-v8a"), "Architecture arm64-v8a not found in the appendix.");
 
@@ -53,6 +54,9 @@ public class AndroidTests
     public void Setup()
     {
         m_BuildPath = Utilities.GetTemporaryFolder();
+        m_DeleteAppendixFolder = !Directory.Exists(MobileHelper.AppendixSavePath);
+        m_ReportPath = new DirectoryInfo(MobileHelper.AppendixSavePath).Parent?.FullName;
+        m_DeleteReportFolder = !Directory.Exists(m_ReportPath);
     }
 
     [OneTimeTearDown]
@@ -61,6 +65,30 @@ public class AndroidTests
         if (Directory.Exists(m_BuildPath))
         {
             Directory.Delete(m_BuildPath, true);
+        }
+
+        if (m_DeleteReportFolder)
+        {
+            Directory.Delete(m_ReportPath, true);
+            File.Delete($"{m_ReportPath}.meta");
+            return;
+        }
+
+        if (m_DeleteAppendixFolder)
+        {
+            Directory.Delete(MobileHelper.AppendixSavePath);
+            File.Delete($"{MobileHelper.AppendixSavePath}.meta");
+            return;
+        }
+
+        if (m_AppendixGuids == null)
+            return;
+
+        foreach (var guid in m_AppendixGuids)
+        {
+            var appendixPath = Path.Combine(MobileHelper.AppendixSavePath, guid);
+            File.Delete(appendixPath);
+            File.Delete($"{appendixPath}.meta");
         }
     }
 
@@ -77,6 +105,10 @@ public class AndroidTests
         };
 
         var report = BuildPipeline.BuildPlayer(options);
-        return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString());
+        if (m_AppendixGuids == null)
+            m_AppendixGuids = new List<string>();
+        var appendixGuid = report.summary.guid.ToString();
+        m_AppendixGuids.Add(appendixGuid);
+        return MobileHelper.LoadMobileAppendix(appendixGuid);
     }
 }

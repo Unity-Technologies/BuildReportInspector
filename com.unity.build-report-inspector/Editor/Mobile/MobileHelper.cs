@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using UnityEngine;
+using Unity.BuildReportInspector.Mobile.ZipUtility;
 
 namespace Unity.BuildReportInspector.Mobile
 {
@@ -28,19 +29,22 @@ namespace Unity.BuildReportInspector.Mobile
 
         internal static void GenerateAppleAppendix(string applicationPath, string guid)
         {
+            var temporaryFolder = Utilities.GetTemporaryFolder();
             try
             {
                 MobileHelper.RegisterPlatformUtilities(new AppleUtilities());
-                using (var archive = ZipFile.OpenRead(applicationPath))
+                using (var archive = new ZipBundle(applicationPath))
                 {
                     var guidFile = archive.Entries.FirstOrDefault(x => x.Name == "UnityBuildGuid.txt");
                     if (guidFile == null)
                     {
-                        Debug.LogError("The provided application was built before BuildReportInspector package was added to the project.");
+                        Debug.LogError("The signature of the opened build report doesn't match the provided application.");
                         return;
                     }
 
-                    using (var reader = new StreamReader(guidFile.Open()))
+                    var guidUnzipped = Path.Combine(temporaryFolder, "UnityBuildGuid.txt");
+                    AppleUtilities.UnzipFile(applicationPath, guidFile.FullName, guidUnzipped);
+                    using (var reader = new StreamReader(guidUnzipped))
                     {
                         var applicationGuid = reader.ReadToEnd();
                         if (applicationGuid != guid)
@@ -50,14 +54,17 @@ namespace Unity.BuildReportInspector.Mobile
                         }
                     }
                 }
-                
+
                 GenerateMobileAppendix(applicationPath, guid);
             }
             catch
             {
                 Debug.LogError("Could not open the application archive. Please provide a valid .ipa bundle.");
             }
-
+            finally
+            {
+                Directory.Delete(temporaryFolder, true);
+            }
         }
 
         private static void GenerateMobileAppendix(string applicationPath, string guid)

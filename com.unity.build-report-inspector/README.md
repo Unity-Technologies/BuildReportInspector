@@ -8,7 +8,9 @@ This script allows you to inspect this information graphically in the Editor UI,
 Disclaimer
 ==========
 
-This package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html).
+This package is provided as-is, with no support from Unity Technologies. We plan to add a built-in and supported UI for the BuildReport feature in a future version of Unity, but until then, this package serves as a demonstration on how you can access the BuildReport information today.
+
+In particular, this package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html).  
 
 Usage
 =====

@@ -384,7 +384,7 @@ namespace Unity.BuildReportInspector
             {
                 EditorGUILayout.HelpBox("To get more accurate report data, please provide an .ipa file generated from a " +
                                         "matching Unity build using the dialog below.", MessageType.Warning);
-                if (!GUILayout.Button("Select an iOS .ipa bundle"))
+                if (!GUILayout.Button("Select an .ipa bundle"))
                 {
                     return;
                 }
