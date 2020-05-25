@@ -9,8 +9,8 @@ test_platforms:
     flavor: b1.large
   - name: mac
     type: Unity::VM::osx
-    image: buildfarm/mac:stable
-    flavor: m1.mac
+    image: package-ci/mac:stable
+    flavor: b1.large
 ---
 pack:
   name: Pack
