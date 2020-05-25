@@ -38,7 +38,7 @@ namespace Unity.BuildReportInspector.Mobile
                     var guidFile = archive.Entries.FirstOrDefault(x => x.Name == "UnityBuildGuid.txt");
                     if (guidFile == null)
                     {
-                        Debug.LogError("The provided application was built before BuildReportInspector package was added to the project.");
+                        Debug.LogError("The signature of the opened build report doesn't match the provided application.");
                         return;
                     }
 

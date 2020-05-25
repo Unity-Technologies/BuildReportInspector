@@ -24,6 +24,7 @@ namespace Unity.BuildReportInspector.Mobile.ZipUtility
         public List<ZipEntry> Entries { get; }
 
         private const int k_EndOfCentralDirectoryMarker = 101010256;
+        private const int k_MaxEndOfCentralDirectoryOffset = 65557;
         private readonly FileStream m_ZipStream;
         private long m_EndOfCentralDirectoryOffset;
         private long EndOfCentralDirectoryOffset
@@ -39,7 +40,7 @@ namespace Unity.BuildReportInspector.Mobile.ZipUtility
         private long FindEndOfCentralDirectoryOffset()
         {
             var marker = BitConverter.GetBytes(k_EndOfCentralDirectoryMarker);
-            for (var offset = 4; offset <= m_ZipStream.Length; offset++)
+            for (var offset = 4; offset <= k_MaxEndOfCentralDirectoryOffset; offset++)
             {
                 m_ZipStream.Seek(-offset, SeekOrigin.End);
                 var sizeBytes = new byte[4];
