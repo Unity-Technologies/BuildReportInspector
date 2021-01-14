@@ -26,7 +26,7 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -c Editor -c Android -u trunk --fast
-    - curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/{{ platform.utr }} --output {{ platform.utr }}
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/{{ platform.utr }} --output {{ platform.utr }}
 {% if platform.os == 'macOS' %}
     - chmod +x ./{{ platform.utr }}
     - ln -s /Users/bokken/android-ndk-r19 .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/NDK
