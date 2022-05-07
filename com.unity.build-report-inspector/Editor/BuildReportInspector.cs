@@ -148,8 +148,15 @@ namespace Unity.BuildReportInspector
             ImporterType
         };
 
+        private enum OutputFilesDisplayMode
+        {
+            Size,
+            FileType
+        };
+
         ReportDisplayMode mode;
         SourceAssetsDisplayMode sourceDispMode;
+        OutputFilesDisplayMode outputDispMode;
 
         private Vector2 scrollPosition;
 
@@ -191,7 +198,12 @@ namespace Unity.BuildReportInspector
             if (mode == ReportDisplayMode.SourceAssets)
             {
                 sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", sourceDispMode);
+            } 
+            else if (mode == ReportDisplayMode.OutputFiles)
+            {
+                outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
             }
+            
 #if UNITY_2019_3_OR_NEWER
             if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
@@ -665,19 +677,30 @@ namespace Unity.BuildReportInspector
                     break;
                 }
             }
-            var odd = false;
-            foreach (var file in report.files)
-            {
-                if (file.path.StartsWith(tempRoot))
-                    continue;
-                GUILayout.BeginHorizontal(odd? OddStyle:EvenStyle);
-                odd = !odd;
-                GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
-                GUILayout.Label(file.role);
-                GUILayout.Label(FormatSize(file.size), SizeStyle);
-                GUILayout.EndHorizontal();
 
+            switch (outputDispMode) {
+                case OutputFilesDisplayMode.Size:
+                    var odd = false;
+
+                    BuildFile[] reportFiles = report.files;
+                    Array.Sort(reportFiles, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
+                        
+                    foreach (var file in reportFiles)
+                    {
+                        if (file.path.StartsWith(tempRoot))
+                            continue;
+                        GUILayout.BeginHorizontal(odd? OddStyle:EvenStyle);
+                        odd = !odd;
+                        GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
+                        GUILayout.Label(file.role);
+                        GUILayout.Label(FormatSize(file.size), SizeStyle);
+                        GUILayout.EndHorizontal();
+                    }
+                    break;
+                case OutputFilesDisplayMode.FileType:
+                    break;
             }
+
         }
 
 #if UNITY_2019_3_OR_NEWER
