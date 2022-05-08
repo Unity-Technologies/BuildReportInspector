@@ -151,7 +151,7 @@ namespace Unity.BuildReportInspector
         private enum OutputFilesDisplayMode
         {
             Size,
-            FileType
+            Role
         };
 
         ReportDisplayMode mode;
@@ -490,7 +490,37 @@ namespace Unity.BuildReportInspector
             GUILayout.EndVertical();
         }
 
+        private static void ShowOutputFiles(BuildFile[] files, ref float vPos, int rootLength, string roleFilter = null)
+        {
+            GUILayout.BeginVertical();
+            var odd = false;
+            
+            foreach (BuildFile file in files)
+            {
+                if (string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0) {
+                    continue;
+                }
+                
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUILayout.Label(new GUIContent(file.path.Substring(rootLength), file.path));
+                
+                if (string.IsNullOrEmpty(roleFilter)) 
+                {
+                    GUILayout.Label(file.role);
+                }
+                
+                GUILayout.Label(FormatSize(file.size), SizeStyle);
+                GUILayout.EndHorizontal();
+                
+                vPos += k_LineHeight;
+                odd = !odd;
+            }
+
+            GUILayout.EndVertical();
+        }
+
         Dictionary<string, bool> assetsFoldout = new Dictionary<string, bool>();
+        Dictionary<string, bool> outputFilesFoldout = new Dictionary<string, bool>();
         List<AssetEntry> assets;
         Dictionary<string, int> outputFiles;
         Dictionary<string, int> assetTypes;
@@ -678,17 +708,18 @@ namespace Unity.BuildReportInspector
                 }
             }
 
+            BuildFile[] reportFiles = report.files;
+            var odd = false;
+            
             switch (outputDispMode) {
                 case OutputFilesDisplayMode.Size:
-                    var odd = false;
-
-                    BuildFile[] reportFiles = report.files;
                     Array.Sort(reportFiles, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
-                        
+
                     foreach (var file in reportFiles)
                     {
                         if (file.path.StartsWith(tempRoot))
                             continue;
+                        
                         GUILayout.BeginHorizontal(odd? OddStyle:EvenStyle);
                         odd = !odd;
                         GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
@@ -697,7 +728,45 @@ namespace Unity.BuildReportInspector
                         GUILayout.EndHorizontal();
                     }
                     break;
-                case OutputFilesDisplayMode.FileType:
+                case OutputFilesDisplayMode.Role:
+                    Array.Sort(reportFiles, (fileA, fileB) => {
+                        int comparison = string.Compare(fileA.role, fileB.role, StringComparison.OrdinalIgnoreCase);
+                        return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison; 
+                    });
+
+                    float vPos = -scrollPosition.y;
+                    Dictionary<string, ulong> sizePerRole = new Dictionary<string, ulong>();
+                    
+                    foreach (BuildFile file in reportFiles) {
+                        if (sizePerRole.ContainsKey(file.role)) {
+                            sizePerRole[file.role] += file.size;
+                        } else {
+                            sizePerRole[file.role] = file.size;
+                        }
+                    }
+                    
+                    KeyValuePair<string, ulong>[] pairs = sizePerRole.ToArray();
+                    Array.Sort(pairs, (pairA, pairB) => { return pairB.Value.CompareTo(pairA.Value); });
+                    
+                    foreach (KeyValuePair<string, ulong> pair in pairs)
+                    {
+                        if (! outputFilesFoldout.ContainsKey(pair.Key)) {
+                            outputFilesFoldout[pair.Key] = false;
+                        }
+                        
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(10);
+                        outputFilesFoldout[pair.Key] = EditorGUILayout.Foldout(outputFilesFoldout[pair.Key], pair.Key, DataFileStyle);
+                        GUILayout.Label(FormatSize(pair.Value), SizeStyle);
+                        GUILayout.EndHorizontal();
+
+                        vPos += k_LineHeight;
+
+                        if (outputFilesFoldout[pair.Key]) {
+                            ShowOutputFiles(reportFiles, ref vPos, longestCommonRoot.Length, pair.Key);
+                        }
+                    }
+                    
                     break;
             }
 
