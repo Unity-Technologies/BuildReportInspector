@@ -497,7 +497,7 @@ namespace Unity.BuildReportInspector
             
             foreach (BuildFile file in files)
             {
-                if (string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0) {
+                if (roleFilter != null && string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0) {
                     continue;
                 }
                 
@@ -709,24 +709,13 @@ namespace Unity.BuildReportInspector
             }
 
             BuildFile[] reportFiles = report.files;
+            float vPos = -scrollPosition.y;
             var odd = false;
             
             switch (outputDispMode) {
                 case OutputFilesDisplayMode.Size:
                     Array.Sort(reportFiles, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
-
-                    foreach (var file in reportFiles)
-                    {
-                        if (file.path.StartsWith(tempRoot))
-                            continue;
-                        
-                        GUILayout.BeginHorizontal(odd? OddStyle:EvenStyle);
-                        odd = !odd;
-                        GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
-                        GUILayout.Label(file.role);
-                        GUILayout.Label(FormatSize(file.size), SizeStyle);
-                        GUILayout.EndHorizontal();
-                    }
+                    ShowOutputFiles(reportFiles, ref vPos, longestCommonRoot.Length);
                     break;
                 case OutputFilesDisplayMode.Role:
                     Array.Sort(reportFiles, (fileA, fileB) => {
@@ -734,7 +723,6 @@ namespace Unity.BuildReportInspector
                         return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison; 
                     });
 
-                    float vPos = -scrollPosition.y;
                     Dictionary<string, ulong> sizePerRole = new Dictionary<string, ulong>();
                     
                     foreach (BuildFile file in reportFiles) {
