@@ -154,9 +154,15 @@ namespace Unity.BuildReportInspector
             Role
         };
 
+        private enum MobileOutputDisplayMode {
+            CompressedSize,
+            UncompressedSize
+        }
+
         ReportDisplayMode mode;
         SourceAssetsDisplayMode sourceDispMode;
         OutputFilesDisplayMode outputDispMode;
+        MobileOutputDisplayMode mobileOutputDispMode;
 
         private Vector2 scrollPosition;
 
@@ -201,7 +207,17 @@ namespace Unity.BuildReportInspector
             } 
             else if (mode == ReportDisplayMode.OutputFiles)
             {
-                outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
+#if UNITY_2019_3_OR_NEWER
+                if (mobileAppendix != null) {
+                    mobileOutputDispMode = (MobileOutputDisplayMode) EditorGUILayout.EnumPopup("Sort by:", mobileOutputDispMode);
+                }
+                else 
+                {
+#endif
+                    outputDispMode = (OutputFilesDisplayMode) EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
+#if UNITY_2019_3_OR_NEWER
+                }
+#endif                
             }
             
 #if UNITY_2019_3_OR_NEWER
@@ -761,11 +777,22 @@ namespace Unity.BuildReportInspector
         }
 
 #if UNITY_2019_3_OR_NEWER
-        private void OnMobileOutputFilesGUI()
-        {
-            var longestCommonRoot = mobileAppendix.Files[0].Path;
+        private void OnMobileOutputFilesGUI() {
+            MobileFile[] appendixFiles = mobileAppendix.Files;
+
+            if (mobileOutputDispMode == MobileOutputDisplayMode.CompressedSize) {
+                Array.Sort(appendixFiles, (fileA, fileB) => {
+                    return fileB.CompressedSize.CompareTo(fileA.CompressedSize);
+                });
+            } else {
+                Array.Sort(appendixFiles, (fileA, fileB) => {
+                    return fileB.UncompressedSize.CompareTo(fileA.UncompressedSize);
+                });
+            }
+            
+            var longestCommonRoot = appendixFiles[0].Path;
             var tempRoot = Path.GetFullPath("Temp");
-            foreach (var file in mobileAppendix.Files)
+            foreach (var file in appendixFiles)
             {
                 if (file.Path.StartsWith(tempRoot))
                     continue;
@@ -778,7 +805,7 @@ namespace Unity.BuildReportInspector
                 }
             }
             var odd = false;
-            foreach (var file in mobileAppendix.Files)
+            foreach (var file in appendixFiles)
             {
                 if (file.Path.StartsWith(tempRoot))
                     continue;
