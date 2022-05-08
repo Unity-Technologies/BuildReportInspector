@@ -518,7 +518,8 @@ namespace Unity.BuildReportInspector
                 }
                 
                 GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
-                GUILayout.Label(new GUIContent(file.path.Substring(rootLength), file.path));
+                GUIContent guiContent = new GUIContent(file.path.Substring(rootLength), file.path); 
+                GUILayout.Label(guiContent, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
                 
                 if (string.IsNullOrEmpty(roleFilter)) 
                 {
