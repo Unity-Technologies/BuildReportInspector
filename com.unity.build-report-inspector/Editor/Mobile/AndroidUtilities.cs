@@ -208,6 +208,13 @@ namespace Unity.BuildReportInspector.Mobile
         private static long GetApkDownloadSize(string applicationPath)
         {
             string apkAnalyzerPath;
+            apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
+
+            if(!Directory.Exists(apkAnalyzerPath))
+            {
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+            }
+
             if (Utilities.IsTestEnvironment)
             {
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
@@ -215,7 +222,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
-                apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
             }
             else
             {
@@ -223,7 +230,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
             }
             
 #if UNITY_EDITOR_WIN
