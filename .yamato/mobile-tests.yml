@@ -7,6 +7,12 @@ test_platforms:
     image: mobile/android-execution-base:v.0.0.6.1
     flavor: b1.xlarge
     utr: utr.bat
+  - os: macOS
+    target: Android
+    type: Unity::VM::osx
+    image: mobile/android-macos-execution:v.0.1.8-1078567
+    flavor: b1.xlarge
+    utr: utr
 ---
 {% for editor in test_editors %}
 {% for platform in test_platforms %}
