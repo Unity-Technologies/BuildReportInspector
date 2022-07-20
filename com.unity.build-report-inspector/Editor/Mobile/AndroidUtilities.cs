@@ -216,7 +216,9 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
-                apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(sdkEnv, "cmdline-tools", "6.0", "bin", "apkanalyzer");
+                if(!File.Exists(apkAnalyzerPath))
+                    apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
             else
             {
@@ -224,7 +226,9 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
+                if(!File.Exists(apkAnalyzerPath))
+                    apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
 #if UNITY_EDITOR_WIN
             apkAnalyzerPath += ".bat";
@@ -254,7 +258,10 @@ namespace Unity.BuildReportInspector.Mobile
 
         private static string GetApkAnalyzerJavaArgs()
         {
-            var appHome = $"\"{Path.Combine(SdkPath, "tools")}\"";
+            var appHome = $"\"{Path.Combine(SdkPath, "cmdline-tools", "6.0")}\"";
+            if(!Directory.Exists(appHome))
+                appHome = $"\"{Path.Combine(SdkPath, "tools")}\"";
+
             var defaultJvmOpts = $"-Dcom.android.sdklib.toolsdir={appHome}";
             var classPath = string.Format("{0}\\lib\\dvlib-26.0.0-dev.jar;{0}\\lib\\util-2.2.1.jar;{0}\\l" +
                 "ib\\jimfs-1.1.jar;{0}\\lib\\annotations-13.0.jar;{0}\\lib\\ddmlib-26.0.0-dev.jar;{0}\\lib\\repositor" +
