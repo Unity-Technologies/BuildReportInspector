@@ -216,9 +216,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
-                apkAnalyzerPath = Utilities.Combine(sdkEnv, "cmdline-tools", "6.0", "bin", "apkanalyzer");
-                if(!File.Exists(apkAnalyzerPath))
-                    apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
             else
             {
@@ -226,9 +224,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
-                if(!File.Exists(apkAnalyzerPath))
-                    apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
 #if UNITY_EDITOR_WIN
             apkAnalyzerPath += ".bat";
