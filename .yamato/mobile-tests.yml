@@ -26,17 +26,6 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -c Editor -c Android -u trunk --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/{{ platform.utr }} --output {{ platform.utr }}
-{% if platform.os == 'macOS' %}
-    - chmod +x ./{{ platform.utr }}
-    - ln -s /Users/bokken/android-ndk-r19 .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/NDK
-    - ln -s $JAVA_HOME .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/OpenJDK
-    - ln -s $ANDROID_SDK_ROOT .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/SDK
-{% endif %}
-{% if platform.os == 'Windows' %}
-    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\NDK %ANDROID_NDK_ROOT%
-    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK %JAVA_HOME%
-    - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\SDK %ANDROID_SDK_ROOT%
-{% endif %}
     - ./{{ platform.utr }} --suite=editor --editor-location=.Editor --testproject=TestProject --artifacts_path=logs
   artifacts:
     logs:
