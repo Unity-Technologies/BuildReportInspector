@@ -1,7 +1,7 @@
 {
   "name": "com.unity.build-report-inspector",
   "displayName": "Build Report Inspector",
-  "version": "0.2.2-preview",
+  "version": "0.2.3-preview",
   "unity": "2018.4",
   "description": "Editor script which implements an inspector for the BuildReport class.\n\nThe BuildReport class lets you access information about your last build, and helps you profile the time spent building your project and the builds disk size footprint. This information may help you improving your build times and build sizes. This script allows you to inspect this information graphically in the Editor UI, making it more easily accessible than the script APIs would.\n\nYou can obtain a BuildReport object as the return value of the BuildPlayer API (https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) when making a build, or by selecting a file containing BuildReport data.\nUnity's default build setup will write such a file to Library/LastBuild.buildreport (this may change in the future) when making a build. This script adds a convenient menu shortcut (Window/Open Last Build Report), to copy that file to the Assets folder and select it, so you can inspect it using the Build Report Inspector.\nOnce open in the inspector, you can chose what data to view using the popup menu at the top of the window.",
   "dependencies": {},
