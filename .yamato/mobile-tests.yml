@@ -10,7 +10,7 @@ test_platforms:
   - os: macOS
     target: Android
     type: Unity::VM::osx
-    image: mobile/android-macos-execution:v.0.1.8-1078567
+    image: mobile/android-macos-execution:v.0.1.9-1168872
     flavor: b1.xlarge
     utr: utr
 ---
