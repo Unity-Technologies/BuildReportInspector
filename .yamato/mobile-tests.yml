@@ -37,6 +37,7 @@ test_{{ platform.target }}_{{ platform.os }}_{{ editor.version }}:
     - ln -s $ANDROID_SDK_ROOT .Editor/Unity.app/Contents/PlaybackEngines/AndroidPlayer/SDK
 {% endif %}
 {% if platform.os == 'Windows' %}
+    - del /f .Editor\Data\PlaybackEngines\AndroidPlayer\NDK
     - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\NDK %ANDROID_NDK_ROOT%
     - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\OpenJDK %JAVA_HOME%
     - mklink /D .Editor\Data\PlaybackEngines\AndroidPlayer\SDK %ANDROID_SDK_ROOT%
