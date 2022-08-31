@@ -1,6 +1,9 @@
 test_editors:
-  - version: 2019.3
   - version: trunk
+  - version: 2022.2
+  - version: 2022.1
+  - version: 2021.3
+  - version: 2020.3
 test_platforms:
   - os: Windows
     target: Android
