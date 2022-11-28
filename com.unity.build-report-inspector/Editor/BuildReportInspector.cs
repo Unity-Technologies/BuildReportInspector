@@ -648,12 +648,18 @@ namespace Unity.BuildReportInspector
 
         private void OnOutputFilesGUI()
         {
-            if (report.GetFiles().Length == 0)
+#if UNITY_2022_1_OR_NEWER
+            var files = report.GetFiles();
+#else
+            var files = report.files;
+#endif // UNITY_2019_3_OR_NEWER
+            
+            if (files.Length == 0)
                 return;
 
-            var longestCommonRoot = report.GetFiles()[0].path;
+            var longestCommonRoot = files[0].path;
             var tempRoot = Path.GetFullPath("Temp");
-            foreach (var file in report.GetFiles())
+            foreach (var file in files)
             {
                 if (file.path.StartsWith(tempRoot))
                     continue;
@@ -666,7 +672,7 @@ namespace Unity.BuildReportInspector
                 }
             }
             var odd = false;
-            foreach (var file in report.GetFiles())
+            foreach (var file in files)
             {
                 if (file.path.StartsWith(tempRoot))
                     continue;
