@@ -26,7 +26,7 @@ namespace Unity.BuildReportInspector
         [MenuItem("Window/Open Last Build Report")]
         public static void OpenLastBuild()
         {
-            const string buildReportDir = "Assets/BuildReports";
+            const string buildReportDir = "Assets/Editor/BuildReports";
             if (!Directory.Exists(buildReportDir))
                 Directory.CreateDirectory(buildReportDir);
 
