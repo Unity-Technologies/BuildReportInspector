@@ -30,11 +30,13 @@ namespace Unity.BuildReportInspector
             if (!Directory.Exists(buildReportDir))
                 Directory.CreateDirectory(buildReportDir);
 
+            var path = buildReportDir + "/New Report.buildreport";
             var date = File.GetLastWriteTime("Library/LastBuild.buildreport");
-            var assetPath = buildReportDir + "/Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
-            File.Copy("Library/LastBuild.buildreport", assetPath, true);
-            AssetDatabase.ImportAsset(assetPath);
-            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(assetPath) };
+            var name = "Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
+            File.Copy("Library/LastBuild.buildreport", path, true);
+            AssetDatabase.ImportAsset(path);
+            AssetDatabase.RenameAsset(path, name);
+            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(buildReportDir + "/" + name) };
         }
 
         private BuildReport report
