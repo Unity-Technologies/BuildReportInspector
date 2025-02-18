@@ -165,8 +165,6 @@ namespace Unity.BuildReportInspector
         OutputFilesDisplayMode outputDispMode;
         MobileOutputDisplayMode mobileOutputDispMode;
 
-        private Vector2 scrollPosition;
-
         static string FormatTime(System.TimeSpan t)
         {
             return t.Hours + ":" + t.Minutes.ToString("D2") + ":" + t.Seconds.ToString("D2") + "." + t.Milliseconds.ToString("D3");
@@ -221,7 +219,6 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndHorizontal();
             }
 
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             switch (mode)
             {
                 case ReportDisplayMode.BuildSteps:
@@ -247,7 +244,6 @@ namespace Unity.BuildReportInspector
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            EditorGUILayout.EndScrollView();
         }
 
         private static List<LogType> ErrorLogTypes = new List<LogType> { LogType.Error, LogType.Assert, LogType.Exception };
@@ -526,7 +522,7 @@ namespace Unity.BuildReportInspector
 
         private void OnAssetsGUI()
         {
-            var vPos = -scrollPosition.y;
+            var vPos = 0;
             if (assets == null)
             {
                 assets = new List<AssetEntry>();
@@ -639,7 +635,7 @@ namespace Unity.BuildReportInspector
                 }
             }
 
-            float vPos = -scrollPosition.y;
+            float vPos = 0;
             var odd = false;
 
             switch (outputDispMode)
