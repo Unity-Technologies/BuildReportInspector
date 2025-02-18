@@ -43,6 +43,6 @@ public class PlayerBuildWithDetailedReport
 
         Debug.Log("Development build " +
             ((report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) ? "succeeded" : "failed") +
-            ".\In the select \"Window/Open Last Build Report\" to view the results.");
+            ".\nIn the menu select \"Window / Open Last Build Report\" to view the results.");
     }
 }
