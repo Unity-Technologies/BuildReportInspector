@@ -6,14 +6,12 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using Object = UnityEngine.Object;
-#if UNITY_2019_3_OR_NEWER
 using Unity.BuildReportInspector.Mobile;
-#endif
 
 namespace Unity.BuildReportInspector
 {
     /// <summary>
-    /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
+    /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects.
     /// </summary>
     [CustomEditor(typeof(BuildReport))]
     public class BuildReportInspector : Editor
@@ -45,12 +43,10 @@ namespace Unity.BuildReportInspector
             get { return target as BuildReport; }
         }
 
-#if UNITY_2019_3_OR_NEWER
         private MobileAppendix mobileAppendix
         {
             get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
-#endif // UNITY_2019_3_OR_NEWER
 
         private static GUIStyle s_SizeStyle;
 
@@ -192,17 +188,11 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("    Build Name: ", Application.productName);
             EditorGUILayout.LabelField("    Platform: ", report.summary.platform.ToString());
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
-#if UNITY_2019_3_OR_NEWER
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
 
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
-#else
-            EditorGUILayout.LabelField("    Total Size: ", FormatSize(report.summary.totalSize));
-            EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
-#endif
-
 
             mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
 
@@ -212,20 +202,16 @@ namespace Unity.BuildReportInspector
             }
             else if (mode == ReportDisplayMode.OutputFiles)
             {
-#if UNITY_2019_3_OR_NEWER
-                if (mobileAppendix != null) {
+                if (mobileAppendix != null)
+                {
                     mobileOutputDispMode = (MobileOutputDisplayMode) EditorGUILayout.EnumPopup("Sort by:", mobileOutputDispMode);
                 }
                 else
                 {
-#endif
-                outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
-#if UNITY_2019_3_OR_NEWER
+                    outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
                 }
-#endif
             }
 
-#if UNITY_2019_3_OR_NEWER
             if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
@@ -234,7 +220,7 @@ namespace Unity.BuildReportInspector
                 GUILayout.Label("Compressed size", SizeStyle);
                 GUILayout.EndHorizontal();
             }
-#endif
+
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             switch (mode)
             {
@@ -242,21 +228,13 @@ namespace Unity.BuildReportInspector
                     OnBuildStepGUI();
                     break;
                 case ReportDisplayMode.SourceAssets:
-#if UNITY_2019_3_OR_NEWER
                     OnAssetsGUI();
-#else
-                    OnOldAssetsGUI();
-#endif
                     break;
                 case ReportDisplayMode.OutputFiles:
-#if UNITY_2019_3_OR_NEWER
                     if (mobileAppendix == null)
                         OnOutputFilesGUI();
                     else
                         OnMobileOutputFilesGUI();
-#else
-                    OnOutputFilesGUI();
-#endif
                     break;
                 case ReportDisplayMode.Stripping:
                     OnStrippingGUI();
@@ -392,7 +370,6 @@ namespace Unity.BuildReportInspector
             }
         }
 
-#if UNITY_2019_3_OR_NEWER
         private void OnMobileAppendixGUI()
         {
             if (mobileAppendix != null)
@@ -430,7 +407,6 @@ namespace Unity.BuildReportInspector
             }
 #endif // UNITY_EDITOR_OSX
         }
-#endif // UNITY_2019_3_OR_NEWER
 
         BuildStepNode rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
@@ -548,79 +524,6 @@ namespace Unity.BuildReportInspector
         Dictionary<string, int> outputFiles;
         Dictionary<string, int> assetTypes;
 
-#if !UNITY_2019_3_OR_NEWER
-        private void OnOldAssetsGUI()
-        {
-            var vPos = -scrollPosition.y;
-            var appendices = serializedObject.FindProperty("m_Appendices");
-            if (appendices != null)
-            {
-                if (assets == null)
-                {
-                    assets = new List<AssetEntry>();
-                    outputFiles = new Dictionary<string, int>();
-                    assetTypes = new Dictionary<string, int>();
-                    for (var i = 0; i < appendices.arraySize; i++)
-                    {
-                        var appendix = appendices.GetArrayElementAtIndex(i);
-                        if (appendix.objectReferenceValue.GetType() != typeof(Object))
-                            continue;
-                        var appendixSO = new SerializedObject(appendix.objectReferenceValue);
-                        if (appendixSO.FindProperty("m_ShortPath") == null)
-                            continue;
-                        var pathProperty = appendixSO.FindProperty("m_ShortPath");
-                        if (pathProperty == null)
-                            continue;
-                        var path = pathProperty.stringValue;
-                        var contents = appendixSO.FindProperty("m_Contents");
-                        outputFiles[path] = 0;
-                        var totalSizeProp = appendixSO.FindProperty("m_Overhead");
-                        if (totalSizeProp != null)
-                            outputFiles[path] = totalSizeProp.intValue;
-                        if (contents == null)
-                            continue;
-                        for (var j = 0; j < contents.arraySize; j++)
-                        {
-                            var entry = contents.GetArrayElementAtIndex(j);
-                            var entryPathProp = entry.FindPropertyRelative("buildTimeAssetPath");
-                            if (entryPathProp == null)
-                                continue;
-                            var entryPath = entryPathProp.stringValue;
-                            if (string.IsNullOrEmpty(entryPath))
-                                continue;
-                            var assetEntry = new AssetEntry();
-                            var asset = AssetImporter.GetAtPath(entryPath);
-                            var type = asset != null ? asset.GetType().Name : "Unknown";
-                            if (type.EndsWith("Importer"))
-                                type = type.Substring(0, type.Length - 8);
-                            var sizeProp = entry.FindPropertyRelative("packedSize");
-                            if (!assetTypes.ContainsKey(type))
-                                assetTypes[type] = 0;
-                            if (sizeProp != null)
-                            {
-                                assetEntry.size = sizeProp.intValue;
-                                outputFiles[path] += sizeProp.intValue;
-                                assetTypes[type] += sizeProp.intValue;
-                            }
-                            assetEntry.icon = AssetDatabase.GetCachedIcon(entryPath);
-                            assetEntry.outputFile = path;
-                            assetEntry.type = type;
-                            assetEntry.path = entryPath;
-                            assets.Add(assetEntry);
-                        }
-                    }
-                    assets = assets.OrderBy(p => -p.size).ToList();
-                    outputFiles = outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
-                    assetTypes = assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
-                }
-                DisplayAssetsView(vPos);
-            }
-            else
-                GUILayout.Label("No Appendices property found");
-        }
-#endif // !UNITY_2019_3_OR_NEWER
-
-#if UNITY_2019_3_OR_NEWER
         private void OnAssetsGUI()
         {
             var vPos = -scrollPosition.y;
@@ -661,7 +564,6 @@ namespace Unity.BuildReportInspector
             }
             DisplayAssetsView(vPos);
         }
-#endif // UNITY_2019_3_OR_NEWER
 
         private void DisplayAssetsView(float vPos)
         {
@@ -796,7 +698,7 @@ namespace Unity.BuildReportInspector
 
         }
 
-#if UNITY_2019_3_OR_NEWER
+
         private void OnMobileOutputFilesGUI() {
             MobileFile[] appendixFiles = mobileAppendix.Files;
 
@@ -838,7 +740,6 @@ namespace Unity.BuildReportInspector
 
             }
         }
-#endif // UNITY_2019_3_OR_NEWER
 
         Dictionary<string, Texture> strippingIcons = new Dictionary<string, Texture>();
         Dictionary<string, int> strippingSizes = new Dictionary<string, int>();
