@@ -208,6 +208,7 @@ namespace Unity.BuildReportInspector.Mobile
         private static long GetApkDownloadSize(string applicationPath)
         {
             string apkAnalyzerPath;
+
             if (Utilities.IsTestEnvironment)
             {
                 var sdkEnv = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT");
@@ -225,7 +226,6 @@ namespace Unity.BuildReportInspector.Mobile
                 }
                 apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
-            
 #if UNITY_EDITOR_WIN
             apkAnalyzerPath += ".bat";
 #endif // UNITY_EDITOR_WIN

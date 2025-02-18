@@ -30,11 +30,13 @@ namespace Unity.BuildReportInspector
             if (!Directory.Exists(buildReportDir))
                 Directory.CreateDirectory(buildReportDir);
 
+            var path = buildReportDir + "/LastBuild.buildreport";
             var date = File.GetLastWriteTime("Library/LastBuild.buildreport");
-            var assetPath = buildReportDir + "/Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
-            File.Copy("Library/LastBuild.buildreport", assetPath, true);
-            AssetDatabase.ImportAsset(assetPath);
-            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(assetPath) };
+            var name = "Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
+            File.Copy("Library/LastBuild.buildreport", path, true);
+            AssetDatabase.ImportAsset(path);
+            AssetDatabase.RenameAsset(path, name);
+            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(buildReportDir + "/" + name) };
         }
 
         private BuildReport report
@@ -707,12 +709,18 @@ namespace Unity.BuildReportInspector
 
         private void OnOutputFilesGUI()
         {
-            if (report.files.Length == 0)
+#if UNITY_2022_1_OR_NEWER
+            var files = report.GetFiles();
+#else
+            var files = report.files;
+#endif // UNITY_2022_1_OR_NEWER
+            
+            if (files.Length == 0)
                 return;
 
-            var longestCommonRoot = report.files[0].path;
+            var longestCommonRoot = files[0].path;
             var tempRoot = Path.GetFullPath("Temp");
-            foreach (var file in report.files)
+            foreach (var file in files)
             {
                 if (file.path.StartsWith(tempRoot))
                     continue;
@@ -725,24 +733,23 @@ namespace Unity.BuildReportInspector
                 }
             }
 
-            BuildFile[] reportFiles = report.files;
             float vPos = -scrollPosition.y;
             var odd = false;
-            
+
             switch (outputDispMode) {
                 case OutputFilesDisplayMode.Size:
-                    Array.Sort(reportFiles, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
-                    ShowOutputFiles(reportFiles, ref vPos, longestCommonRoot.Length);
+                    Array.Sort(files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
+                    ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);
                     break;
                 case OutputFilesDisplayMode.Role:
-                    Array.Sort(reportFiles, (fileA, fileB) => {
+                    Array.Sort(files, (fileA, fileB) => {
                         int comparison = string.Compare(fileA.role, fileB.role, StringComparison.OrdinalIgnoreCase);
                         return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison; 
                     });
 
                     Dictionary<string, ulong> sizePerRole = new Dictionary<string, ulong>();
                     
-                    foreach (BuildFile file in reportFiles) {
+                    foreach (BuildFile file in files) {
                         if (sizePerRole.ContainsKey(file.role)) {
                             sizePerRole[file.role] += file.size;
                         } else {
@@ -768,7 +775,7 @@ namespace Unity.BuildReportInspector
                         vPos += k_LineHeight;
 
                         if (outputFilesFoldout[pair.Key]) {
-                            ShowOutputFiles(reportFiles, ref vPos, longestCommonRoot.Length, pair.Key);
+                            ShowOutputFiles(files, ref vPos, longestCommonRoot.Length, pair.Key);
                         }
                     }
                     
