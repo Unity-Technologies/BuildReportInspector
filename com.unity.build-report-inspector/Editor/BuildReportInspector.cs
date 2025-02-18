@@ -150,8 +150,21 @@ namespace Unity.BuildReportInspector
             ImporterType
         };
 
+        private enum OutputFilesDisplayMode
+        {
+            Size,
+            Role
+        };
+
+        private enum MobileOutputDisplayMode {
+            CompressedSize,
+            UncompressedSize
+        }
+
         ReportDisplayMode mode;
         SourceAssetsDisplayMode sourceDispMode;
+        OutputFilesDisplayMode outputDispMode;
+        MobileOutputDisplayMode mobileOutputDispMode;
 
         private Vector2 scrollPosition;
 
@@ -193,7 +206,22 @@ namespace Unity.BuildReportInspector
             if (mode == ReportDisplayMode.SourceAssets)
             {
                 sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", sourceDispMode);
+            } 
+            else if (mode == ReportDisplayMode.OutputFiles)
+            {
+#if UNITY_2019_3_OR_NEWER
+                if (mobileAppendix != null) {
+                    mobileOutputDispMode = (MobileOutputDisplayMode) EditorGUILayout.EnumPopup("Sort by:", mobileOutputDispMode);
+                }
+                else 
+                {
+#endif
+                    outputDispMode = (OutputFilesDisplayMode) EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
+#if UNITY_2019_3_OR_NEWER
+                }
+#endif                
             }
+            
 #if UNITY_2019_3_OR_NEWER
             if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
@@ -480,7 +508,38 @@ namespace Unity.BuildReportInspector
             GUILayout.EndVertical();
         }
 
+        private static void ShowOutputFiles(BuildFile[] files, ref float vPos, int rootLength, string roleFilter = null)
+        {
+            GUILayout.BeginVertical();
+            var odd = false;
+            
+            foreach (BuildFile file in files)
+            {
+                if (roleFilter != null && string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0) {
+                    continue;
+                }
+                
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUIContent guiContent = new GUIContent(file.path.Substring(rootLength), file.path); 
+                GUILayout.Label(guiContent, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
+                
+                if (string.IsNullOrEmpty(roleFilter)) 
+                {
+                    GUILayout.Label(file.role);
+                }
+                
+                GUILayout.Label(FormatSize(file.size), SizeStyle);
+                GUILayout.EndHorizontal();
+                
+                vPos += k_LineHeight;
+                odd = !odd;
+            }
+
+            GUILayout.EndVertical();
+        }
+
         Dictionary<string, bool> assetsFoldout = new Dictionary<string, bool>();
+        Dictionary<string, bool> outputFilesFoldout = new Dictionary<string, bool>();
         List<AssetEntry> assets;
         Dictionary<string, int> outputFiles;
         Dictionary<string, int> assetTypes;
@@ -654,7 +713,7 @@ namespace Unity.BuildReportInspector
             var files = report.GetFiles();
 #else
             var files = report.files;
-#endif // UNITY_2019_3_OR_NEWER
+#endif // UNITY_2022_1_OR_NEWER
             
             if (files.Length == 0)
                 return;
@@ -673,27 +732,75 @@ namespace Unity.BuildReportInspector
                     break;
                 }
             }
-            var odd = false;
-            foreach (var file in files)
-            {
-                if (file.path.StartsWith(tempRoot))
-                    continue;
-                GUILayout.BeginHorizontal(odd? OddStyle:EvenStyle);
-                odd = !odd;
-                GUILayout.Label(new GUIContent(file.path.Substring(longestCommonRoot.Length), file.path), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
-                GUILayout.Label(file.role);
-                GUILayout.Label(FormatSize(file.size), SizeStyle);
-                GUILayout.EndHorizontal();
 
+            float vPos = -scrollPosition.y;
+            var odd = false;
+
+            switch (outputDispMode) {
+                case OutputFilesDisplayMode.Size:
+                    Array.Sort(files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
+                    ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);
+                    break;
+                case OutputFilesDisplayMode.Role:
+                    Array.Sort(files, (fileA, fileB) => {
+                        int comparison = string.Compare(fileA.role, fileB.role, StringComparison.OrdinalIgnoreCase);
+                        return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison; 
+                    });
+
+                    Dictionary<string, ulong> sizePerRole = new Dictionary<string, ulong>();
+                    
+                    foreach (BuildFile file in files) {
+                        if (sizePerRole.ContainsKey(file.role)) {
+                            sizePerRole[file.role] += file.size;
+                        } else {
+                            sizePerRole[file.role] = file.size;
+                        }
+                    }
+                    
+                    KeyValuePair<string, ulong>[] pairs = sizePerRole.ToArray();
+                    Array.Sort(pairs, (pairA, pairB) => { return pairB.Value.CompareTo(pairA.Value); });
+                    
+                    foreach (KeyValuePair<string, ulong> pair in pairs)
+                    {
+                        if (! outputFilesFoldout.ContainsKey(pair.Key)) {
+                            outputFilesFoldout[pair.Key] = false;
+                        }
+                        
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(10);
+                        outputFilesFoldout[pair.Key] = EditorGUILayout.Foldout(outputFilesFoldout[pair.Key], pair.Key, DataFileStyle);
+                        GUILayout.Label(FormatSize(pair.Value), SizeStyle);
+                        GUILayout.EndHorizontal();
+
+                        vPos += k_LineHeight;
+
+                        if (outputFilesFoldout[pair.Key]) {
+                            ShowOutputFiles(files, ref vPos, longestCommonRoot.Length, pair.Key);
+                        }
+                    }
+                    
+                    break;
             }
+
         }
 
 #if UNITY_2019_3_OR_NEWER
-        private void OnMobileOutputFilesGUI()
-        {
-            var longestCommonRoot = mobileAppendix.Files[0].Path;
+        private void OnMobileOutputFilesGUI() {
+            MobileFile[] appendixFiles = mobileAppendix.Files;
+
+            if (mobileOutputDispMode == MobileOutputDisplayMode.CompressedSize) {
+                Array.Sort(appendixFiles, (fileA, fileB) => {
+                    return fileB.CompressedSize.CompareTo(fileA.CompressedSize);
+                });
+            } else {
+                Array.Sort(appendixFiles, (fileA, fileB) => {
+                    return fileB.UncompressedSize.CompareTo(fileA.UncompressedSize);
+                });
+            }
+            
+            var longestCommonRoot = appendixFiles[0].Path;
             var tempRoot = Path.GetFullPath("Temp");
-            foreach (var file in mobileAppendix.Files)
+            foreach (var file in appendixFiles)
             {
                 if (file.Path.StartsWith(tempRoot))
                     continue;
@@ -706,7 +813,7 @@ namespace Unity.BuildReportInspector
                 }
             }
             var odd = false;
-            foreach (var file in mobileAppendix.Files)
+            foreach (var file in appendixFiles)
             {
                 if (file.Path.StartsWith(tempRoot))
                     continue;
