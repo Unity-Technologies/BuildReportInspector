@@ -16,6 +16,10 @@ namespace Unity.BuildReportInspector
     [CustomEditor(typeof(BuildReport))]
     public class BuildReportInspector : Editor
     {
+        static readonly string k_BuildReportDir = "Assets/BuildReports";
+        static readonly string k_LastBuildReportFileName = "Library/LastBuild.buildreport";
+        static readonly int k_MaxBuiltEntriesToShow = 10000; // To avoid UI freezing for truly large builds
+
         [MenuItem("Window/Open Last Build Report", true)]
         public static bool ValidateOpenLastBuild()
         {
@@ -25,17 +29,16 @@ namespace Unity.BuildReportInspector
         [MenuItem("Window/Open Last Build Report")]
         public static void OpenLastBuild()
         {
-            const string buildReportDir = "Assets/BuildReports";
-            if (!Directory.Exists(buildReportDir))
-                Directory.CreateDirectory(buildReportDir);
+            if (!Directory.Exists(k_BuildReportDir))
+                Directory.CreateDirectory(k_BuildReportDir);
 
-            var path = buildReportDir + "/LastBuild.buildreport";
-            var date = File.GetLastWriteTime("Library/LastBuild.buildreport");
+            var path = k_BuildReportDir + "/LastBuild.buildreport";
+            var date = File.GetLastWriteTime(k_LastBuildReportFileName);
             var name = "Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
-            File.Copy("Library/LastBuild.buildreport", path, true);
+            File.Copy(k_LastBuildReportFileName, path, true);
             AssetDatabase.ImportAsset(path);
             AssetDatabase.RenameAsset(path, name);
-            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(buildReportDir + "/" + name) };
+            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(k_BuildReportDir + "/" + name) };
         }
 
         private BuildReport report
@@ -160,10 +163,10 @@ namespace Unity.BuildReportInspector
             UncompressedSize
         }
 
-        ReportDisplayMode mode;
-        SourceAssetsDisplayMode sourceDispMode;
-        OutputFilesDisplayMode outputDispMode;
-        MobileOutputDisplayMode mobileOutputDispMode;
+        ReportDisplayMode m_mode;
+        SourceAssetsDisplayMode m_sourceDispMode;
+        OutputFilesDisplayMode m_outputDispMode;
+        MobileOutputDisplayMode m_mobileOutputDispMode;
 
         static string FormatTime(System.TimeSpan t)
         {
@@ -192,25 +195,25 @@ namespace Unity.BuildReportInspector
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
 
-            mode = (ReportDisplayMode)GUILayout.Toolbar((int)mode, ReportDisplayModeStrings);
+            m_mode = (ReportDisplayMode)GUILayout.Toolbar((int)m_mode, ReportDisplayModeStrings);
 
-            if (mode == ReportDisplayMode.SourceAssets)
+            if (m_mode == ReportDisplayMode.SourceAssets)
             {
-                sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", sourceDispMode);
+                m_sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", m_sourceDispMode);
             }
-            else if (mode == ReportDisplayMode.OutputFiles)
+            else if (m_mode == ReportDisplayMode.OutputFiles)
             {
                 if (mobileAppendix != null)
                 {
-                    mobileOutputDispMode = (MobileOutputDisplayMode) EditorGUILayout.EnumPopup("Sort by:", mobileOutputDispMode);
+                    m_mobileOutputDispMode = (MobileOutputDisplayMode) EditorGUILayout.EnumPopup("Sort by:", m_mobileOutputDispMode);
                 }
                 else
                 {
-                    outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", outputDispMode);
+                    m_outputDispMode = (OutputFilesDisplayMode)EditorGUILayout.EnumPopup("Sort by:", m_outputDispMode);
                 }
             }
 
-            if (mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
+            if (m_mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("File"), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
@@ -219,7 +222,7 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndHorizontal();
             }
 
-            switch (mode)
+            switch (m_mode)
             {
                 case ReportDisplayMode.BuildSteps:
                     OnBuildStepGUI();
@@ -404,14 +407,14 @@ namespace Unity.BuildReportInspector
 #endif // UNITY_EDITOR_OSX
         }
 
-        BuildStepNode rootStepNode = new BuildStepNode(null, -1);
+        BuildStepNode m_rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
         {
-            if (!rootStepNode.children.Any())
+            if (!m_rootStepNode.children.Any())
             {
                 // re-create steps hierarchy
                 var branch = new Stack<BuildStepNode>();
-                branch.Push(rootStepNode);
+                branch.Push(m_rootStepNode);
                 foreach (var step in report.steps)
                 {
                     while (branch.Peek().depth >= step.depth)
@@ -431,15 +434,15 @@ namespace Unity.BuildReportInspector
                     branch.Push(stepNode);
                 }
 
-                rootStepNode.UpdateWorstChildrenLogType();
+                m_rootStepNode.UpdateWorstChildrenLogType();
 
                 // expand first step, usually "Build player"
-                if (rootStepNode.children.Any())
-                    rootStepNode.children[0].foldoutState = true;
+                if (m_rootStepNode.children.Any())
+                    m_rootStepNode.children[0].foldoutState = true;
             }
 
             var odd = false;
-            foreach (var stepNode in rootStepNode.children)
+            foreach (var stepNode in m_rootStepNode.children)
                 stepNode.LayoutGUI(ref odd, 0);
         }
 
@@ -514,25 +517,25 @@ namespace Unity.BuildReportInspector
             GUILayout.EndVertical();
         }
 
-        Dictionary<string, bool> assetsFoldout = new Dictionary<string, bool>();
-        Dictionary<string, bool> outputFilesFoldout = new Dictionary<string, bool>();
-        List<AssetEntry> assets;
-        Dictionary<string, int> outputFiles;
-        Dictionary<string, int> assetTypes;
+        Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
+        Dictionary<string, bool> m_outputFilesFoldout = new Dictionary<string, bool>();
+        List<AssetEntry> m_assets;
+        Dictionary<string, int> m_outputFiles;
+        Dictionary<string, int> m_assetTypes;
 
         private void OnAssetsGUI()
         {
             var vPos = 0;
-            if (assets == null)
+            if (m_assets == null)
             {
-                assets = new List<AssetEntry>();
-                outputFiles = new Dictionary<string, int>();
-                assetTypes = new Dictionary<string, int>();
+                m_assets = new List<AssetEntry>();
+                m_outputFiles = new Dictionary<string, int>();
+                m_assetTypes = new Dictionary<string, int>();
                 foreach (var packedAsset in report.packedAssets)
                 {
-                    outputFiles[packedAsset.shortPath] = 0;
+                    m_outputFiles[packedAsset.shortPath] = 0;
                     var totalSizeProp = packedAsset.overhead;
-                    outputFiles[packedAsset.shortPath] = (int)totalSizeProp;
+                    m_outputFiles[packedAsset.shortPath] = (int)totalSizeProp;
                     foreach (var entry in packedAsset.contents)
                     {
                         var asset = AssetImporter.GetAtPath(entry.sourceAssetPath);
@@ -540,11 +543,11 @@ namespace Unity.BuildReportInspector
                         if (type.EndsWith("Importer"))
                             type = type.Substring(0, type.Length - 8);
                         var sizeProp = entry.packedSize;
-                        if (!assetTypes.ContainsKey(type))
-                            assetTypes[type] = 0;
-                        outputFiles[packedAsset.shortPath] += (int)sizeProp;
-                        assetTypes[type] += (int)sizeProp;
-                        assets.Add(new AssetEntry
+                        if (!m_assetTypes.ContainsKey(type))
+                            m_assetTypes[type] = 0;
+                        m_outputFiles[packedAsset.shortPath] += (int)sizeProp;
+                        m_assetTypes[type] += (int)sizeProp;
+                        m_assets.Add(new AssetEntry
                         {
                             size = (int) sizeProp,
                             icon = AssetDatabase.GetCachedIcon(entry.sourceAssetPath),
@@ -554,54 +557,54 @@ namespace Unity.BuildReportInspector
                         });
                     }
                 }
-                assets = assets.OrderBy(p => -p.size).ToList();
-                outputFiles = outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
-                assetTypes = assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
+                m_assets = m_assets.OrderBy(p => -p.size).ToList();
+                m_outputFiles = m_outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
+                m_assetTypes = m_assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
             }
             DisplayAssetsView(vPos);
         }
 
         private void DisplayAssetsView(float vPos)
         {
-            switch (sourceDispMode)
+            switch (m_sourceDispMode)
             {
                 case SourceAssetsDisplayMode.Size:
-                    ShowAssets(assets, ref vPos);
+                    ShowAssets(m_assets, ref vPos);
                     break;
                 case SourceAssetsDisplayMode.OutputDataFiles:
-                    foreach (var outputFile in outputFiles)
+                    foreach (var outputFile in m_outputFiles)
                     {
-                        if (!assetsFoldout.ContainsKey(outputFile.Key))
-                            assetsFoldout[outputFile.Key] = false;
+                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
+                            m_assetsFoldout[outputFile.Key] = false;
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(10);
-                        assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
+                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
                         GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
                         GUILayout.EndHorizontal();
 
                         vPos += k_LineHeight;
 
-                        if (assetsFoldout[outputFile.Key])
-                            ShowAssets(assets, ref vPos, outputFile.Key);
+                        if (m_assetsFoldout[outputFile.Key])
+                            ShowAssets(m_assets, ref vPos, outputFile.Key);
                     }
                     break;
                 case SourceAssetsDisplayMode.ImporterType:
-                    foreach (var outputFile in assetTypes)
+                    foreach (var outputFile in m_assetTypes)
                     {
-                        if (!assetsFoldout.ContainsKey(outputFile.Key))
-                            assetsFoldout[outputFile.Key] = false;
+                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
+                            m_assetsFoldout[outputFile.Key] = false;
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(10);
-                        assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
+                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
                         GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
                         GUILayout.EndHorizontal();
 
                         vPos += k_LineHeight;
 
-                        if (assetsFoldout[outputFile.Key])
-                            ShowAssets(assets, ref vPos, null, outputFile.Key);
+                        if (m_assetsFoldout[outputFile.Key])
+                            ShowAssets(m_assets, ref vPos, null, outputFile.Key);
                     }
                     break;
                 default:
@@ -638,7 +641,7 @@ namespace Unity.BuildReportInspector
             float vPos = 0;
             var odd = false;
 
-            switch (outputDispMode)
+            switch (m_outputDispMode)
             {
                 case OutputFilesDisplayMode.Size:
                     Array.Sort(files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
@@ -670,20 +673,20 @@ namespace Unity.BuildReportInspector
 
                     foreach (KeyValuePair<string, ulong> pair in pairs)
                     {
-                        if (!outputFilesFoldout.ContainsKey(pair.Key))
+                        if (!m_outputFilesFoldout.ContainsKey(pair.Key))
                         {
-                            outputFilesFoldout[pair.Key] = false;
+                            m_outputFilesFoldout[pair.Key] = false;
                         }
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(10);
-                        outputFilesFoldout[pair.Key] = EditorGUILayout.Foldout(outputFilesFoldout[pair.Key], pair.Key, DataFileStyle);
+                        m_outputFilesFoldout[pair.Key] = EditorGUILayout.Foldout(m_outputFilesFoldout[pair.Key], pair.Key, DataFileStyle);
                         GUILayout.Label(FormatSize(pair.Value), SizeStyle);
                         GUILayout.EndHorizontal();
 
                         vPos += k_LineHeight;
 
-                        if (outputFilesFoldout[pair.Key])
+                        if (m_outputFilesFoldout[pair.Key])
                         {
                             ShowOutputFiles(files, ref vPos, longestCommonRoot.Length, pair.Key);
                         }
@@ -694,11 +697,11 @@ namespace Unity.BuildReportInspector
 
         }
 
-
-        private void OnMobileOutputFilesGUI() {
+        private void OnMobileOutputFilesGUI()
+        {
             MobileFile[] appendixFiles = mobileAppendix.Files;
 
-            if (mobileOutputDispMode == MobileOutputDisplayMode.CompressedSize) {
+            if (m_mobileOutputDispMode == MobileOutputDisplayMode.CompressedSize) {
                 Array.Sort(appendixFiles, (fileA, fileB) => {
                     return fileB.CompressedSize.CompareTo(fileA.CompressedSize);
                 });
@@ -737,15 +740,15 @@ namespace Unity.BuildReportInspector
             }
         }
 
-        Dictionary<string, Texture> strippingIcons = new Dictionary<string, Texture>();
-        Dictionary<string, int> strippingSizes = new Dictionary<string, int>();
+        Dictionary<string, Texture> m_strippingIcons = new Dictionary<string, Texture>();
+        Dictionary<string, int> m_strippingSizes = new Dictionary<string, int>();
 
-        static Dictionary<string, Texture> iconCache = new Dictionary<string, Texture>();
+        static Dictionary<string, Texture> m_iconCache = new Dictionary<string, Texture>();
 
         private static Texture StrippingEntityIcon(string iconString)
         {
-            if (iconCache.ContainsKey(iconString))
-                return iconCache[iconString];
+            if (m_iconCache.ContainsKey(iconString))
+                return m_iconCache[iconString];
 
             if (iconString.StartsWith("class/"))
             {
@@ -754,7 +757,7 @@ namespace Unity.BuildReportInspector
                 {
                     var image = EditorGUIUtility.ObjectContent(null, System.Type.GetType("UnityEngine." + iconString.Substring(6) + ",UnityEngine")).image;
                     if (image != null)
-                        iconCache[iconString] = image;
+                        m_iconCache[iconString] = image;
                 }
             }
             if (iconString.StartsWith("package/"))
@@ -764,43 +767,43 @@ namespace Unity.BuildReportInspector
                 {
                     Texture2D tex = new Texture2D(2, 2);
                     tex.LoadImage(File.ReadAllBytes(path));
-                    iconCache[iconString] = tex;
+                    m_iconCache[iconString] = tex;
                 }
             }
 
-            if (!iconCache.ContainsKey(iconString))
-                iconCache[iconString] = EditorGUIUtility.ObjectContent(null, typeof(DefaultAsset)).image;
+            if (!m_iconCache.ContainsKey(iconString))
+                m_iconCache[iconString] = EditorGUIUtility.ObjectContent(null, typeof(DefaultAsset)).image;
 
-            return iconCache[iconString];
+            return m_iconCache[iconString];
         }
 
-        Dictionary<string, bool> strippingReasonsFoldout = new Dictionary<string, bool>();
+        Dictionary<string, bool> m_strippingReasonsFoldout = new Dictionary<string, bool>();
         private void StrippingEntityGui(string entity, ref bool odd)
         {
             GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
             odd = !odd;
             GUILayout.Space(15);
             var reasons = report.strippingInfo.GetReasonsForIncluding(entity).ToList();
-            if (!strippingIcons.ContainsKey(entity))
-                strippingIcons[entity] = StrippingEntityIcon(entity);
-            var icon = strippingIcons[entity];
+            if (!m_strippingIcons.ContainsKey(entity))
+                m_strippingIcons[entity] = StrippingEntityIcon(entity);
+            var icon = m_strippingIcons[entity];
             if (reasons.Any())
             {
-                if (!strippingReasonsFoldout.ContainsKey(entity))
-                    strippingReasonsFoldout[entity] = false;
-                strippingReasonsFoldout[entity] = EditorGUILayout.Foldout(strippingReasonsFoldout[entity], new GUIContent(entity, icon));
+                if (!m_strippingReasonsFoldout.ContainsKey(entity))
+                    m_strippingReasonsFoldout[entity] = false;
+                m_strippingReasonsFoldout[entity] = EditorGUILayout.Foldout(m_strippingReasonsFoldout[entity], new GUIContent(entity, icon));
             }
             else
                 EditorGUILayout.LabelField(new GUIContent(entity, icon), GUILayout.Height(16), GUILayout.MaxWidth(1000));
 
             GUILayout.FlexibleSpace();
 
-            if (strippingSizes.ContainsKey(entity) && strippingSizes[entity] != 0)
-                GUILayout.Label(FormatSize((ulong)strippingSizes[entity]), SizeStyle, GUILayout.Width(100));
+            if (m_strippingSizes.ContainsKey(entity) && m_strippingSizes[entity] != 0)
+                GUILayout.Label(FormatSize((ulong)m_strippingSizes[entity]), SizeStyle, GUILayout.Width(100));
 
             GUILayout.EndHorizontal();
 
-            if (!strippingReasonsFoldout.ContainsKey(entity) || !strippingReasonsFoldout[entity])
+            if (!m_strippingReasonsFoldout.ContainsKey(entity) || !m_strippingReasonsFoldout[entity])
                 return;
 
             EditorGUI.indentLevel++;
@@ -826,9 +829,9 @@ namespace Unity.BuildReportInspector
                 {
                     var sp = serializedDependencies.GetArrayElementAtIndex(i);
                     var depKey = sp.FindPropertyRelative("key").stringValue;
-                    strippingIcons[depKey] = StrippingEntityIcon(sp.FindPropertyRelative("icon").stringValue);
-                    strippingSizes[depKey] = sp.FindPropertyRelative("size").intValue;
-                    //if (strippingSizes[depKey] != 0)
+                    m_strippingIcons[depKey] = StrippingEntityIcon(sp.FindPropertyRelative("icon").stringValue);
+                    m_strippingSizes[depKey] = sp.FindPropertyRelative("size").intValue;
+                    //if (m_strippingSizes[depKey] != 0)
                     //    hasSizes = true;
                 }
             }
@@ -854,7 +857,7 @@ namespace Unity.BuildReportInspector
             public string[] scenePaths;
             public bool foldoutState;
         }
-        List<ScenesUsingAssetGUI> scenesUsingAssetGUIs = new List<ScenesUsingAssetGUI>();
+        List<ScenesUsingAssetGUI> m_scenesUsingAssetGUIs = new List<ScenesUsingAssetGUI>();
 
         void OnScenesUsingAssetsGUI()
         {
@@ -865,14 +868,14 @@ namespace Unity.BuildReportInspector
             }
 
             // re-create list of scenes using assets
-            if(!scenesUsingAssetGUIs.Any())
+            if(!m_scenesUsingAssetGUIs.Any())
             {
                 foreach (var scenesUsingAsset in report.scenesUsingAssets[0].list)
-                    scenesUsingAssetGUIs.Add(new ScenesUsingAssetGUI { assetPath = scenesUsingAsset.assetPath, scenePaths = scenesUsingAsset.scenePaths, foldoutState = true});
+                    m_scenesUsingAssetGUIs.Add(new ScenesUsingAssetGUI { assetPath = scenesUsingAsset.assetPath, scenePaths = scenesUsingAsset.scenePaths, foldoutState = true});
             }
 
             bool odd = true;
-            foreach (var scenesUsingAssetGUI in scenesUsingAssetGUIs)
+            foreach (var scenesUsingAssetGUI in m_scenesUsingAssetGUIs)
             {
                 odd = !odd;
                 GUILayout.BeginVertical(odd ? OddStyle : EvenStyle);
