@@ -91,7 +91,7 @@ namespace Unity.BuildReportInspector.Mobile
 #endif
             if (File.Exists(javaExecutable))
                 return javaExecutable;
-            
+
             throw new FileNotFoundException($"Java executable not found at {javaExecutable}.");
         }
 
@@ -169,7 +169,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new Exception($"Failed to run bundletool. Output:\n{buildApksOutput}");
                 }
-                
+
                 var getSizeArgs = $"-jar \"{bundleTool}\" get-size total --apks \"{apksPath}\" --dimensions=ABI";
                 var getSizeOutput = Utilities.RunProcessAndGetOutput(javaPath, getSizeArgs, out var getSizeExitCode);
                 if (getSizeExitCode != 0)
@@ -216,7 +216,9 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
-                apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(sdkEnv, "cmdline-tools", "6.0", "bin", "apkanalyzer");
+                if (!File.Exists(apkAnalyzerPath) && !File.Exists(apkAnalyzerPath + ".bat"))
+                    apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
             }
             else
             {
@@ -224,7 +226,9 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
+                if (!File.Exists(apkAnalyzerPath) && !File.Exists(apkAnalyzerPath + ".bat"))
+                    apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
             }
 #if UNITY_EDITOR_WIN
             apkAnalyzerPath += ".bat";
@@ -248,7 +252,7 @@ namespace Unity.BuildReportInspector.Mobile
             {
                 throw new Exception($"apkanalyzer failed to estimate the apk size. Output:\n{apkAnalyzerOutput}");
             }
-            
+
             return result;
         }
 
