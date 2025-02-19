@@ -187,10 +187,14 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("Report Info");
 
             EditorGUILayout.LabelField("    Build Name: ", Application.productName);
+#if UNITY_6000_0_OR_NEWER
+            EditorGUILayout.LabelField("    Build Type: ", report.summary.buildType.ToString());
+#endif
             EditorGUILayout.LabelField("    Platform: ", report.summary.platform.ToString());
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
             EditorGUILayout.LabelField("    Build Result: ", report.summary.result.ToString());
+            EditorGUILayout.LabelField("    Build Output Path: ", report.summary.outputPath);
 
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
@@ -345,7 +349,7 @@ namespace Unity.BuildReportInspector
                                 case LogType.Error:
                                 case LogType.Exception:
                                 case LogType.Assert:
-                                    GUI.color = Color.red;
+                                    GUI.color = Color.yellow; // Easier to read on black background than red
                                     icon = "console.erroricon.sml";
                                     break;
                             }
@@ -457,16 +461,19 @@ namespace Unity.BuildReportInspector
             return (size / (1024.0 * 1024.0 * 1024.0)).ToString("F2") + " GB";
         }
 
-        private struct AssetEntry
+        // Size usage detail within the built data.
+        // This records the total size of a particular type from a particular source asset within the specified output file
+        private struct ContentEntry
         {
-            public string path;
-            public int size;
-            public string outputFile;
+            public string path;       // Source path in the project
+            public ulong size;        // bytes
+            public string outputFile; // name of file in the build output directory
             public string type;
             public Texture icon;
+            public int objectCount;
         }
 
-        private static void ShowAssets(IEnumerable<AssetEntry> assets, ref float vPos, string fileFilter = null, string typeFilter = null)
+        private static void ShowAssets(IEnumerable<ContentEntry> assets, ref float vPos, string fileFilter = null, string typeFilter = null)
         {
             GUILayout.BeginVertical();
             var odd = false;
@@ -476,7 +483,11 @@ namespace Unity.BuildReportInspector
 
                 GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
                 var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
-                if (GUILayout.Button(new GUIContent(Path.GetFileName(fileName), entry.path), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
+                var toolTip = entry.path + " (Count: " + entry.objectCount + ")";
+                if (typeFilter == null)
+                    toolTip += " (Type: " + entry.type + ")";
+
+                if (GUILayout.Button(new GUIContent(fileName, toolTip), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
                     EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
                 GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
                 GUILayout.EndHorizontal();
@@ -486,92 +497,104 @@ namespace Unity.BuildReportInspector
             GUILayout.EndVertical();
         }
 
-        private static void ShowOutputFiles(BuildFile[] files, ref float vPos, int rootLength, string roleFilter = null)
-        {
-            GUILayout.BeginVertical();
-            var odd = false;
-
-            foreach (BuildFile file in files)
-            {
-                if (roleFilter != null && string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0)
-                {
-                    continue;
-                }
-
-                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
-                GUIContent guiContent = new GUIContent(file.path.Substring(rootLength), file.path);
-                GUILayout.Label(guiContent, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
-
-                if (string.IsNullOrEmpty(roleFilter))
-                {
-                    GUILayout.Label(file.role);
-                }
-
-                GUILayout.Label(FormatSize(file.size), SizeStyle);
-                GUILayout.EndHorizontal();
-
-                vPos += k_LineHeight;
-                odd = !odd;
-            }
-
-            GUILayout.EndVertical();
-        }
-
         Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
-        Dictionary<string, bool> m_outputFilesFoldout = new Dictionary<string, bool>();
-        List<AssetEntry> m_assets;
-        Dictionary<string, int> m_outputFiles;
-        Dictionary<string, int> m_assetTypes;
+        List<ContentEntry> m_assets; // records contents of the build output.  Objects of the same type within the same file are collapsed together to single entry
+        Dictionary<string, ulong> m_outputFiles; // Filepath -> size
+        Dictionary<string, ulong> m_assetTypes;  // Type -> size
 
         private void OnAssetsGUI()
         {
             var vPos = 0;
             if (m_assets == null)
             {
-                m_assets = new List<AssetEntry>();
-                m_outputFiles = new Dictionary<string, int>();
-                m_assetTypes = new Dictionary<string, int>();
+                m_assets = new List<ContentEntry>();
+                m_outputFiles = new Dictionary<string, ulong>();
+                m_assetTypes = new Dictionary<string, ulong>();
                 foreach (var packedAsset in report.packedAssets)
                 {
-                    m_outputFiles[packedAsset.shortPath] = 0;
-                    var totalSizeProp = packedAsset.overhead;
-                    m_outputFiles[packedAsset.shortPath] = (int)totalSizeProp;
+                    m_outputFiles[packedAsset.shortPath] = packedAsset.overhead;
+
+                    // Combine all objects that have the same type and source asset to reduce the overhead,
+                    // e.g. no use reporting 1,000 individual gameobjects in the same prefab.
+                    // Note: this won't scale for truly large builds because of the underlying approach of recording
+                    // every single object in the build report, or with high granularity output.  CBD-249
+                    var assetTypesInFile = new Dictionary<string, ContentEntry>();
                     foreach (var entry in packedAsset.contents)
                     {
-                        var asset = AssetImporter.GetAtPath(entry.sourceAssetPath);
-                        var type = asset != null? asset.GetType().Name : "Unknown";
+                        var type = entry.type.ToString();
+
                         if (type.EndsWith("Importer"))
                             type = type.Substring(0, type.Length - 8);
-                        var sizeProp = entry.packedSize;
-                        if (!m_assetTypes.ContainsKey(type))
-                            m_assetTypes[type] = 0;
-                        m_outputFiles[packedAsset.shortPath] += (int)sizeProp;
-                        m_assetTypes[type] += (int)sizeProp;
-                        m_assets.Add(new AssetEntry
+
+                        // With the clustering algorithm and built-in resources then a single output file can contain objects from
+                        // multiple source objects.
+                        var key = type + entry.sourceAssetGUID.ToString();
+
+                        if (assetTypesInFile.ContainsKey(key))
                         {
-                            size = (int) sizeProp,
-                            icon = AssetDatabase.GetCachedIcon(entry.sourceAssetPath),
-                            outputFile = packedAsset.shortPath,
-                            type = type,
-                            path = entry.sourceAssetPath
-                        });
+                            // update the statistics
+                            var existingEntry = assetTypesInFile[key];
+                            existingEntry.size += entry.packedSize;
+                            existingEntry.objectCount++;
+                            assetTypesInFile[key] = existingEntry;
+                        }
+                        else
+                        {
+                            assetTypesInFile[key] = new ContentEntry
+                            {
+                                size = entry.packedSize,
+                                icon = AssetDatabase.GetCachedIcon(entry.sourceAssetPath),
+                                outputFile = packedAsset.shortPath,
+                                type = type,
+                                path = entry.sourceAssetPath,
+                                objectCount = 1
+                            };
+                        }
                     }
+
+                    foreach (var entry in assetTypesInFile)
+                    {
+                        m_assets.Add(entry.Value);
+
+                        var sizeProp = entry.Value.size;
+                        m_outputFiles[packedAsset.shortPath] += sizeProp;
+                        if (!m_assetTypes.ContainsKey(entry.Value.type))
+                            m_assetTypes[entry.Value.type] = 0;
+                        m_assetTypes[entry.Value.type] += sizeProp;
+
+                        if (m_assets.Count == k_MaxBuiltEntriesToShow)
+                            break;
+                    }
+
+                    if (m_assets.Count == k_MaxBuiltEntriesToShow)
+                        break;
                 }
-                m_assets = m_assets.OrderBy(p => -p.size).ToList();
-                m_outputFiles = m_outputFiles.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
-                m_assetTypes = m_assetTypes.OrderBy(p => -p.Value).ToDictionary(x => x.Key, x => x.Value);
+
+                // Sort m_assets in descending order by size
+                m_assets = m_assets.OrderBy(p => ulong.MaxValue - p.size).ToList();
+                m_outputFiles = m_outputFiles.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
+                m_assetTypes = m_assetTypes.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
             }
             DisplayAssetsView(vPos);
         }
 
         private void DisplayAssetsView(float vPos)
         {
+            if (m_assets.Count >= k_MaxBuiltEntriesToShow)
+            {
+                EditorGUILayout.HelpBox("Build has too many objects to show.", MessageType.Info);
+                return;
+            }
+
             switch (m_sourceDispMode)
             {
                 case SourceAssetsDisplayMode.Size:
+                    // List all content by source and size
+                    // There will be multiple items per source if it has objects of different types inside it
                     ShowAssets(m_assets, ref vPos);
                     break;
                 case SourceAssetsDisplayMode.OutputDataFiles:
+                    // Group content by the output file (with size total for all objects of a particular type within each source)
                     foreach (var outputFile in m_outputFiles)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))
@@ -590,6 +613,7 @@ namespace Unity.BuildReportInspector
                     }
                     break;
                 case SourceAssetsDisplayMode.ImporterType:
+                    // Group content by type (with total size of objects of that type listed from each source)
                     foreach (var outputFile in m_assetTypes)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))
@@ -611,6 +635,8 @@ namespace Unity.BuildReportInspector
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        Dictionary<string, bool> m_outputFilesFoldout = new Dictionary<string, bool>();
 
         private void OnOutputFilesGUI()
         {
@@ -738,6 +764,37 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndHorizontal();
 
             }
+        }
+
+        private static void ShowOutputFiles(BuildFile[] files, ref float vPos, int rootLength, string roleFilter = null)
+        {
+            GUILayout.BeginVertical();
+            var odd = false;
+
+            foreach (BuildFile file in files)
+            {
+                if (roleFilter != null && string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0)
+                {
+                    continue;
+                }
+
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUIContent guiContent = new GUIContent(file.path.Substring(rootLength), file.path);
+                GUILayout.Label(guiContent, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
+
+                if (string.IsNullOrEmpty(roleFilter))
+                {
+                    GUILayout.Label(file.role);
+                }
+
+                GUILayout.Label(FormatSize(file.size), SizeStyle);
+                GUILayout.EndHorizontal();
+
+                vPos += k_LineHeight;
+                odd = !odd;
+            }
+
+            GUILayout.EndVertical();
         }
 
         Dictionary<string, Texture> m_strippingIcons = new Dictionary<string, Texture>();
