@@ -1,17 +1,28 @@
 # About Build Report Inspector
 
+This package contains an Editor script which implements an inspector for BuildReport files.
 
-Build Report Inspector is an Editor script which implements an inspector for the BuildReport class added in Unity 18.1.  
-The BuildReport class lets you access information about your last build, and helps you profile the time spent building your project and the builds disk size footprint. This information may help you improving your build times and build sizes.  
-This script allows you to inspect this information graphically in the Editor UI, making it more easily accessible than the script APIs would.
+The BuildReport file is generated for Player builds ( [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html)), as well as [BuildPipeline.BuildAssetBundles](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html). 
+
+This file records information about your last build, and helps you profile the time spent building your project and to understand the disk size footprint of the build output.
+
+This package adds UI support for inspecting this information graphically in the Unity Editor Inspector view.  
+
+Note: The Addressables and Scriptable Build Pipeline packages do not generate a BuildReport file, but Addressables has its own UI for showing build results.
+
+## Alternatives to using this package
+
+Another way to view the build report is using the [Project Auditor package](https://docs.unity3d.com/Packages/com.unity.project-auditor@1.0/manual/build-view-reference.html).
+
+And you can also write your own custom script to access data about your builds, using the [BuildReport](https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html) scripting API
+
 
 ## Preview package
-This package is available as a preview, so it is not ready for production use. The features and documentation in this package might change before it is verified for release.
+This package is available as a preview.
 
-We plan to add a built-in and supported UI for the BuildReport feature in a future version of Unity, but until then, this package serves as a demonstration on how you can access the BuildReport information today.
+**This package is provided as-is, with no support from Unity Technologies.** 
 
-In particular, this package gets the information it can from the BuildReport Scripting API (https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html), but some information in the BuildReport object is not yet exposed through public APIs.  
-
+It serves as a demonstration of the information available in the BuildReport file.  It can be a useful tool "as-is" and continues to be functional in recent versions of Unity, for example Unity 6.
 
 ## Package contents
 
@@ -27,80 +38,89 @@ The following table describes the package folder structure:
 
 To install this package, follow the instructions in the [Package Manager documentation](https://docs.unity3d.com/Manual/upm-ui-install.html).
 
-You can obtain a BuildReport object as the return value of the BuildPlayer API (https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) when making a build, or by selecting a file containing BuildReport data.  
-Unity's default build setup will write such a file to **Library/LastBuild.buildreport** (this may change in the future) when making a build.  
+A recommended way is to install the package from github:
+
+Clone this [repository](git@github.com:Unity-Technologies/BuildReportInspector.git). Alternatively download it as a zip file and expand it to a location on your local hard drive.  Typically it is best to use the "main" branch which has the latest recommended version.
+
+In the Unity Package Manager Window select "Add package from disk" and select the `package.json` file inside the `com.unity.build-report-inspector` folder in your copy of this project.
+
+Once the package is added the custom view will appear any time you use the Inspector to view a BuildReport file.
+  
 This script adds a convenient menu shortcut (_Window/Open Last Build Report_), to copy that file to the **Assets** folder and select it, so you can inspect it using the Build Report Inspector.
-
-Once open in the inspector, you can chose what data to view using the popup menu at the top of the window. The Build Report Inspector can show the following data:
-
-
 
 ## Requirements
 
 This version of Build Report Inspector is compatible with the following versions of the Unity Editor:
 
-* 2018.1 and later (recommended)
+* 2021.3 and later.  It may also be functional in 2019 and 2020 versions.
 
 ---
 
 <a name="UsingBuildReportInspector"></a>
-
 # Using Build Report Inspector
 
-In UnityEditor, select a BuildReport object created after a project build.
+Unity will write the BuildReport to `Library/LastBuild.buildreport` when making a build.  This location is cannot be reached from the Project view, but the file can manually be copied somewhere inside the Assets folder to view it.
 
-You can obtain a BuildReport object as the return value of the BuildPlayer API (https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) when making a build, or by selecting a file containing BuildReport data.  
-Unity's default build setup will write such a file to **Library/LastBuild.buildreport** (this may change in the future) when making a build.  
-This script adds a convenient menu shortcut (_Window/Open Last Build Report_), to copy that file to the **Assets** folder and select it, so you can inspect it using the Build Report Inspector.
+This package adds a menu item `Window/Open Last Build Report` which will take care of copying the last build report file to the Assets/BuildReports folder and select it so that it can be viewed in the Inspector.  The file will be renamed to include a time stamp so that you can have multiple build reports in the same folder.
 
-Once open in the inspector, you can chose what data to view using the popup menu at the top of the window. The Build Report Inspector can show the following data:
+Note: By default the `Library/LastBuild.buildreport` file is in binary serialization format.  But when copied into the Assets folder it will be converted to yaml text format (provided the Asset Serialization project setting is set to "Text").
 
+The Inspector Window includes have several tabs, which are described in the following sections:
 
-<a name="BuildSteps"></a>
 ### Build steps
 The different steps involved in making you build, how long they took, and what messages were printed during those steps (if any).  
 
 <img src="images/BuildSteps.png" width="600">
 
-<a name="SourceAssets"></a>
+The equivalent information is exposed through the API by [BuildReport.steps](https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport-steps.html).
+
+Note: when [BuildOptions.DetailedBuildReport](https://docs.unity3d.com/ScriptReference/BuildOptions.DetailedBuildReport.html) is used then the build steps will include much more information. The amount of build step data generated by this flag is not appropriate for large builds, but can be useful when diagnosing issues with smaller player builds.
+
 ### Source assets
 A list of all assets which are used in the build, and how much they contribute to your build size  
 
 ![SourceAssets](images/SourceAssets.png)
 
-<a name="OutputFiles"></a>
+For the API equivalent see [PackedAssets](https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Build.Reporting.PackedAssets.html).
+
+Warning: This view aggregates information about every single object in the build.  Currently this view is so slow that it is unusable for large builds (e.g. large numbers of Assets or prefabs with large GameObject hierarchies).
+
 ### Output files
 A list of all files written by the build  
 
 ![OutputFiles](images/OutputFiles.png)
 
-<a name="Stripping"></a>
+For the API equivalent see [BuildReport.GetFiles](https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.GetFiles.html).
+
 ### Stripping
 For platforms which support engine code stripping, a list of all engine modules added to the build, and what caused them to be included in the build.  
 
 ![Stripping](images/Stripping.png)
 
-<a name="ScenesUsingAssets"></a>
+For the API equivalent see [StrippingInfo](https://docs.unity3d.com/ScriptReference/Build.Reporting.StrippingInfo.html).
+
 ### Scenes using Assets
-[Available from Unity 2020.1.0a6]  
-When BuildOptions.DetailedBuildReport is passed to [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html), a list describing which scenes are using each asset of the build, is provided in the BuildReport.
+[Available from Unity 2020.1.0a6]
+
+This tab is only populated when you use the [BuildOptions.DetailedBuildReport](https://docs.unity3d.com/ScriptReference/BuildOptions.DetailedBuildReport.html) build option when calling [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) in a custom build script.
+
+This shows a list describing which scenes are using each asset of the build.
 
 <img src="images/ScenesUsingAssets.png" width="400">
 
-<a name="Mobile"></a>
+For the API equivalent see [ScenesUsingAssets](https://docs.unity3d.com/ScriptReference/Build.Reporting.ScenesUsingAssets.html).
+
 ### Mobile
-[Available from Unity 2019.3]  
-The BuildReport API is not very good at reporting data from mobile builds. For this reason, starting at Unity 2019.3, mobile appendix was added to the BuildReportInspector. The mobile appendix expands the BuildReportInspector UI by adding mobile-specific entries, such as architectures inside the build, app store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS).
+
+The mobile appendix was introduced, starting with Unity 2019.3, to report additional data for mobile builds.  When present the BuildReportInspector UI includes additional mobile-specific entries, such as architectures inside the build, App Store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS). 
 
 <img src="images/MobileAppendix.png" width="400">
 
-<a name="Android"></a>
 #### Android
 The mobile appendix is generated automatically for Android builds, right after Unity exports the application bundle.  
 
-<a name="iOS/tvOS"></a>
-#### iOS/tvOS
-Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS/tvOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.
+#### iOS
+Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.
 
 <img src="images/MobileiOSPrompt.png" width="400">
 
@@ -116,7 +136,7 @@ To generate a development .ipa bundle:
 
 Once these steps are complete, an .ipa bundle will be inside the directory, saved in step 7.  
 This process can also be automated using the `xcodebuild` command line tool.  
-After the .ipa bundle is provided, the report information is added to the BuildReportInspector UI automatically.
+After the .ipa bundle is provided, the iOS-specific information is added to the BuildReportInspector UI automatically.
 
 ---
 
