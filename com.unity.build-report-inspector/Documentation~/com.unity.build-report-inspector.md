@@ -99,10 +99,12 @@ For platforms which support engine code stripping, a list of all engine modules 
 
 For the API equivalent see [StrippingInfo](https://docs.unity3d.com/ScriptReference/Build.Reporting.StrippingInfo.html).
 
+This tab is only shown for Player builds because it is not relevant for AssetBundle builds.
+
 ### Scenes using Assets
 [Available from Unity 2020.1.0a6]
 
-This tab is only populated when you use the [BuildOptions.DetailedBuildReport](https://docs.unity3d.com/ScriptReference/BuildOptions.DetailedBuildReport.html) build option when calling [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) in a custom build script.
+This tab is only populated when you use the [BuildOptions.DetailedBuildReport](https://docs.unity3d.com/ScriptReference/BuildOptions.DetailedBuildReport.html) build option when calling [BuildPipeline.BuildPlayer](https://docs.unity3d.com/ScriptReference/BuildPipeline.BuildPlayer.html) in a custom build script.  It is not available for AssetBundle builds.
 
 This shows a list describing which scenes are using each asset of the build.
 
@@ -112,12 +114,16 @@ For the API equivalent see [ScenesUsingAssets](https://docs.unity3d.com/ScriptRe
 
 ### Mobile
 
-The mobile appendix was introduced, starting with Unity 2019.3, to report additional data for mobile builds.  When present the BuildReportInspector UI includes additional mobile-specific entries, such as architectures inside the build, App Store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS). 
+The mobile appendix was introduced, starting with Unity 2019.3, to report additional data for mobile builds.  
+
+When present, the BuildReportInspector UI includes additional mobile-specific entries, such as architectures inside the build, App Store download sizes and the list of files inside the application bundle (.apk, .obb, .aab for Android and .ipa for iOS/tvOS). 
 
 <img src="images/MobileAppendix.png" width="400">
 
 #### Android
-The mobile appendix is generated automatically for Android builds, right after Unity exports the application bundle.  
+The mobile appendix is generated automatically for Android builds using build callbacks, immediately after Unity exports the application bundle.
+
+This appendix information is saved in a file in the "Assets/BuildReports/Mobile" directory named after the build's unique GUID.
 
 #### iOS
 Because Unity does not export .ipa bundles directly, they need to be generated manually by the user. When an iOS build report is opened in Unity, the BuildReportInspector UI will display a prompt to open an .ipa bundle for more detailed information about the build, as shown in the image below.

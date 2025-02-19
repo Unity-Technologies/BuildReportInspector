@@ -68,6 +68,29 @@ namespace Unity.BuildReportInspector
             get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
 
+#if !UNITY_6000_0_OR_NEWER
+        private static string m_BuildType;
+#endif
+        private string BuildType
+        {
+            get
+            {
+#if UNITY_6000_0_OR_NEWER
+                return report.summary.buildType.ToString();
+#else
+                // There is a cost to pulling all the build steps, so cache the result
+                if (string.IsNullOrEmpty(m_BuildType))
+                {
+                    if (report.steps[0].name == "Build Asset Bundles")
+                        m_BuildType = "AssetBundle";
+                    else
+                        m_BuildType = "Player";
+                }
+                return m_BuildType;
+#endif
+            }
+        }
+
         private static GUIStyle s_SizeStyle;
 
         private static GUIStyle SizeStyle
@@ -205,6 +228,14 @@ namespace Unity.BuildReportInspector
     #endif
         };
 
+        // The Stripping and ScenesUsingAssets don't apply to AssetBundle builds.
+        // Note: this requires that player-only tabs are always at the end of the list.
+        readonly string[] ToolbarTabStringsAssetBundle = {
+            "BuildSteps",
+            "SourceAssets",
+            "OutputFiles"
+        };
+
         /// <summary>
         /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
         /// </summary>
@@ -219,9 +250,7 @@ namespace Unity.BuildReportInspector
             EditorGUILayout.LabelField("Report Info");
 
             EditorGUILayout.LabelField("    Build Name: ", Application.productName);
-#if UNITY_6000_0_OR_NEWER
-            EditorGUILayout.LabelField("    Build Type: ", report.summary.buildType.ToString());
-#endif
+            EditorGUILayout.LabelField("    Build Type: ", BuildType);
             EditorGUILayout.LabelField("    Platform: ", report.summary.platform.ToString());
             EditorGUILayout.LabelField("    Total Time: ", FormatTime(report.summary.totalTime));
             EditorGUILayout.LabelField("    Total Size: ", FormatSize(mobileAppendix == null ? report.summary.totalSize : (ulong)mobileAppendix.BuildSize));
@@ -231,7 +260,11 @@ namespace Unity.BuildReportInspector
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
 
-            m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStrings);
+            if (BuildType == "AssetBundle")
+                // Hide a few tabs which are never populated for AssetBundles
+                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStringsAssetBundle);
+            else
+                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStrings);
 
             if (m_mode == ToolbarTabs.SourceAssets)
             {
