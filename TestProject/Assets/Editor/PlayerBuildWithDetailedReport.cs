@@ -11,38 +11,19 @@ public class PlayerBuildWithDetailedReport
     [MenuItem("Build/Build Player")]
     public static void BuildPlayer()
     {
-        string buildPath = "Builds/TestBuild";
+        // Use the settings from the Player window, including scene list.  This will pop up a window for selecting the output
+        BuildPlayerOptions buildParameters = BuildPlayerWindow.DefaultBuildMethods.GetBuildPlayerOptions(new BuildPlayerOptions());
+        buildParameters.options |= BuildOptions.DetailedBuildReport;
 
-        BuildTarget buildTarget = EditorUserBuildSettings.activeBuildTarget;
-
-        if (buildTarget == BuildTarget.StandaloneWindows64)
-            buildPath += ".exe";
-
-        BuildOptions buildOptions = BuildOptions.Development | BuildOptions.DetailedBuildReport;
-
-        string[] scenes = EditorBuildSettings.scenes
-                   .Where(scene => scene.enabled)
-                   .Select(scene => scene.path)
-                   .ToArray();
-
-        if (scenes.Length == 0)
-        {
-            Debug.LogError("No scenes are enabled in Build Settings. Please add scenes to the build.");
-            return;
-        }
-
-        var buildParameters = new BuildPlayerOptions()
-        {
-            scenes = scenes,
-            locationPathName = buildPath,
-            options = buildOptions,
-            target = buildTarget
-        };
+        // When repeating builds by default the previous content is reused and not reported in the build report
+        // so clean builds can be useful when testing (but of course much slower)
+        buildParameters.options |= BuildOptions.CleanBuildCache;
 
         BuildReport report = BuildPipeline.BuildPlayer(buildParameters);
 
-        Debug.Log("Development build " +
-            ((report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) ? "succeeded" : "failed") +
-            ".\nIn the menu select \"Window / Open Last Build Report\" to view the results.");
+        // Give a tip about how to view the result with BuildReportInspector
+        Debug.Log("Build " +
+            ((report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) ? "succeeded." : "failed.") +
+            "\nSelect \"Window / Open Last Build Report\" from the Menu to view the results.");
     }
 }
