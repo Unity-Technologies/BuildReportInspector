@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.1-preview] - 2025-02-18
 
 -Drop support for versions older than 2019.3.  Tested on the oldest version that is still LTS, 2021.3.
+-Fix SourceAsset performance, fold-out issue
+-Fix menu item behavior when BuildReport was already copied into project
+-Show BuildType and Build output directory
 -Fix test project compilation.  Test project has menu item for building with "Detailed Build Report" option enabled.
 
 ## [0.4.0-preview] - 2025-02-17
