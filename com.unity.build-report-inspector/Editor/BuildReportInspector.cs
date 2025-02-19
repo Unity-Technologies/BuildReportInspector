@@ -55,6 +55,8 @@ namespace Unity.BuildReportInspector
             Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(destination) };
         }
 
+        #region Helpers
+
         private BuildReport report
         {
             get { return target as BuildReport; }
@@ -62,6 +64,7 @@ namespace Unity.BuildReportInspector
 
         private MobileAppendix mobileAppendix
         {
+            // Look for additional mobile information, which is stored in a file based on the build's guid
             get { return MobileHelper.LoadMobileAppendix(report.summary.guid.ToString()); }
         }
 
@@ -137,27 +140,6 @@ namespace Unity.BuildReportInspector
 
         private const int k_LineHeight = 20;
 
-        private enum ReportDisplayMode
-        {
-            BuildSteps,
-            SourceAssets,
-            OutputFiles,
-            Stripping,
-#if UNITY_2020_1_OR_NEWER
-            ScenesUsingAssets,
-#endif
-        };
-
-        readonly string[] ReportDisplayModeStrings = {
-            "BuildSteps",
-            "SourceAssets",
-            "OutputFiles",
-            "Stripping",
-    #if UNITY_2020_1_OR_NEWER
-            "ScenesUsingAssets",
-    #endif
-        };
-
         private enum SourceAssetsDisplayMode
         {
             Size,
@@ -177,7 +159,7 @@ namespace Unity.BuildReportInspector
             UncompressedSize
         }
 
-        ReportDisplayMode m_mode;
+        ToolbarTabs m_mode;
         SourceAssetsDisplayMode m_sourceDispMode;
         OutputFilesDisplayMode m_outputDispMode;
         MobileOutputDisplayMode m_mobileOutputDispMode;
@@ -186,6 +168,42 @@ namespace Unity.BuildReportInspector
         {
             return t.Hours + ":" + t.Minutes.ToString("D2") + ":" + t.Seconds.ToString("D2") + "." + t.Milliseconds.ToString("D3");
         }
+
+        private static string FormatSize(ulong size)
+        {
+            if (size < 1024)
+                return size + " B";
+            if (size < 1024 * 1024)
+                return (size / 1024.00).ToString("F2") + " KB";
+            if (size < 1024 * 1024 * 1024)
+                return (size / (1024.0 * 1024.0)).ToString("F2") + " MB";
+            return (size / (1024.0 * 1024.0 * 1024.0)).ToString("F2") + " GB";
+        }
+
+        #endregion
+
+        #region MainUI
+
+        private enum ToolbarTabs
+        {
+            BuildSteps,
+            SourceAssets,
+            OutputFiles,
+            Stripping,
+#if UNITY_2020_1_OR_NEWER
+            ScenesUsingAssets,
+#endif
+        };
+
+        readonly string[] ToolbarTabStrings = {
+            "BuildSteps",
+            "SourceAssets", // Could also be called "Content Details"
+            "OutputFiles",
+            "Stripping",
+    #if UNITY_2020_1_OR_NEWER
+            "ScenesUsingAssets",
+    #endif
+        };
 
         /// <summary>
         /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
@@ -213,13 +231,13 @@ namespace Unity.BuildReportInspector
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
 
-            m_mode = (ReportDisplayMode)GUILayout.Toolbar((int)m_mode, ReportDisplayModeStrings);
+            m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStrings);
 
-            if (m_mode == ReportDisplayMode.SourceAssets)
+            if (m_mode == ToolbarTabs.SourceAssets)
             {
                 m_sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", m_sourceDispMode);
             }
-            else if (m_mode == ReportDisplayMode.OutputFiles)
+            else if (m_mode == ToolbarTabs.OutputFiles)
             {
                 if (mobileAppendix != null)
                 {
@@ -231,7 +249,7 @@ namespace Unity.BuildReportInspector
                 }
             }
 
-            if (m_mode == ReportDisplayMode.OutputFiles && mobileAppendix != null)
+            if (m_mode == ToolbarTabs.OutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("File"), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
@@ -242,23 +260,23 @@ namespace Unity.BuildReportInspector
 
             switch (m_mode)
             {
-                case ReportDisplayMode.BuildSteps:
+                case ToolbarTabs.BuildSteps:
                     OnBuildStepGUI();
                     break;
-                case ReportDisplayMode.SourceAssets:
-                    OnAssetsGUI();
+                case ToolbarTabs.SourceAssets:
+                    OnSourceAssetsGUI();
                     break;
-                case ReportDisplayMode.OutputFiles:
+                case ToolbarTabs.OutputFiles:
                     if (mobileAppendix == null)
                         OnOutputFilesGUI();
                     else
                         OnMobileOutputFilesGUI();
                     break;
-                case ReportDisplayMode.Stripping:
+                case ToolbarTabs.Stripping:
                     OnStrippingGUI();
                     break;
 #if UNITY_2020_1_OR_NEWER
-                case ReportDisplayMode.ScenesUsingAssets:
+                case ToolbarTabs.ScenesUsingAssets:
                     OnScenesUsingAssetsGUI();
                     break;
 #endif
@@ -266,6 +284,48 @@ namespace Unity.BuildReportInspector
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        private void OnMobileAppendixGUI()
+        {
+            if (mobileAppendix != null)
+            {
+                if (mobileAppendix.Architectures != null)
+                {
+                    EditorGUILayout.LabelField("    Download Sizes: ");
+                    foreach (var entry in mobileAppendix.Architectures)
+                    {
+                        var sizeText = entry.DownloadSize == 0 ? "N/A" : FormatSize((ulong)entry.DownloadSize);
+                        EditorGUILayout.LabelField(string.Format("            {0}", entry.Name), sizeText);
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
+                }
+            }
+#if UNITY_EDITOR_OSX
+            // On macOS, show a help dialog for generating the MobileAppendix for iOS/tvOS
+            else if (report.summary.platform == BuildTarget.iOS || report.summary.platform == BuildTarget.tvOS)
+            {
+                EditorGUILayout.HelpBox("To get more accurate report data, please provide an .ipa file generated from a " +
+                                        "matching Unity build using the dialog below.", MessageType.Warning);
+                if (!GUILayout.Button("Select an .ipa bundle"))
+                {
+                    return;
+                }
+                var ipaPath = EditorUtility.OpenFilePanel("Select an .ipa build.", "", "ipa");
+                if (!string.IsNullOrEmpty(ipaPath))
+                {
+                    // If an .ipa is selected, generate the MobileAppendix
+                    MobileHelper.GenerateAppleAppendix(ipaPath, report.summary.guid.ToString());
+                }
+            }
+#endif // UNITY_EDITOR_OSX
+        }
+
+        #endregion
+
+        #region BuildSteps
 
         private static List<LogType> ErrorLogTypes = new List<LogType> { LogType.Error, LogType.Assert, LogType.Exception };
 
@@ -387,44 +447,6 @@ namespace Unity.BuildReportInspector
             }
         }
 
-        private void OnMobileAppendixGUI()
-        {
-            if (mobileAppendix != null)
-            {
-                if (mobileAppendix.Architectures != null)
-                {
-                    EditorGUILayout.LabelField("    Download Sizes: ");
-                    foreach (var entry in mobileAppendix.Architectures)
-                    {
-                        var sizeText = entry.DownloadSize == 0 ? "N/A" : FormatSize((ulong) entry.DownloadSize);
-                        EditorGUILayout.LabelField(string.Format("            {0}", entry.Name), sizeText);
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.HelpBox("Could not determine the architectures present in the build.", MessageType.Warning);
-                }
-            }
-#if UNITY_EDITOR_OSX
-            // On macOS, show a help dialog for generating the MobileAppendix for iOS/tvOS
-            else if (report.summary.platform == BuildTarget.iOS || report.summary.platform == BuildTarget.tvOS)
-            {
-                EditorGUILayout.HelpBox("To get more accurate report data, please provide an .ipa file generated from a " +
-                                        "matching Unity build using the dialog below.", MessageType.Warning);
-                if (!GUILayout.Button("Select an .ipa bundle"))
-                {
-                    return;
-                }
-                var ipaPath = EditorUtility.OpenFilePanel("Select an .ipa build.", "", "ipa");
-                if (!string.IsNullOrEmpty(ipaPath))
-                {
-                    // If an .ipa is selected, generate the MobileAppendix
-                    MobileHelper.GenerateAppleAppendix(ipaPath, report.summary.guid.ToString());
-                }
-            }
-#endif // UNITY_EDITOR_OSX
-        }
-
         BuildStepNode m_rootStepNode = new BuildStepNode(null, -1);
         private void OnBuildStepGUI()
         {
@@ -464,17 +486,9 @@ namespace Unity.BuildReportInspector
                 stepNode.LayoutGUI(ref odd, 0);
         }
 
-        private static string FormatSize(ulong size)
-        {
-            if (size < 1024)
-                return size + " B";
-            if (size < 1024 * 1024)
-                return (size / 1024.00).ToString("F2") + " KB";
-            if (size < 1024 * 1024 * 1024)
-                return (size / (1024.0 * 1024.0)).ToString("F2") + " MB";
-            return (size / (1024.0 * 1024.0 * 1024.0)).ToString("F2") + " GB";
-        }
+        #endregion
 
+        #region SourceAssets
         // Size usage detail within the built data.
         // This records the total size of a particular type from a particular source asset within the specified output file
         private struct ContentEntry
@@ -516,7 +530,7 @@ namespace Unity.BuildReportInspector
         Dictionary<string, ulong> m_outputFiles; // Filepath -> size
         Dictionary<string, ulong> m_assetTypes;  // Type -> size
 
-        private void OnAssetsGUI()
+        private void OnSourceAssetsGUI()
         {
             var vPos = 0;
             if (m_assets == null)
@@ -649,6 +663,10 @@ namespace Unity.BuildReportInspector
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        #endregion
+
+        #region OutputFiles
 
         Dictionary<string, bool> m_outputFilesFoldout = new Dictionary<string, bool>();
 
@@ -810,6 +828,9 @@ namespace Unity.BuildReportInspector
 
             GUILayout.EndVertical();
         }
+        #endregion
+
+        #region Stripping
 
         Dictionary<string, Texture> m_strippingIcons = new Dictionary<string, Texture>();
         Dictionary<string, int> m_strippingSizes = new Dictionary<string, int>();
@@ -921,6 +942,10 @@ namespace Unity.BuildReportInspector
             }
         }
 
+        #endregion
+
+        #region ScenesUsingAsset
+
 #if UNITY_2020_1_OR_NEWER
         class ScenesUsingAssetGUI
         {
@@ -972,5 +997,6 @@ namespace Unity.BuildReportInspector
             }
         }
 #endif // UNITY_2020_1_OR_NEWER
+        #endregion
     }
 }
