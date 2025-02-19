@@ -16,7 +16,10 @@ namespace Unity.BuildReportInspector
     [CustomEditor(typeof(BuildReport))]
     public class BuildReportInspector : Editor
     {
+        // Tip: you may want to exclude this folder from source code (e.g. in your .gitignore)
+        // or adjust it to a preferred location.
         static readonly string k_BuildReportDir = "Assets/BuildReports";
+
         static readonly string k_LastBuildReportFileName = "Library/LastBuild.buildreport";
         static readonly int k_MaxBuiltEntriesToShow = 10000; // To avoid UI freezing for truly large builds
 
@@ -26,19 +29,30 @@ namespace Unity.BuildReportInspector
             return File.Exists("Library/LastBuild.buildreport");
         }
 
+        // The BuildReport is written to the library location and each build overwrites the same file.
+        // This menu item copies the file into the Assets folder so that it can be inspected.
+        // The build timestamp is used so that multiple build reports can exist in the same folder.
+        // Note: you can also copy and name the files yourself, the BuildReportInspector works on any build report,
+        // and doesn't rely on this copy mechanism.
         [MenuItem("Window/Open Last Build Report")]
         public static void OpenLastBuild()
         {
             if (!Directory.Exists(k_BuildReportDir))
                 Directory.CreateDirectory(k_BuildReportDir);
 
-            var path = k_BuildReportDir + "/LastBuild.buildreport";
             var date = File.GetLastWriteTime(k_LastBuildReportFileName);
             var name = "Build_" + date.ToString("yyyy-dd-MMM-HH-mm-ss") + ".buildreport";
-            File.Copy(k_LastBuildReportFileName, path, true);
-            AssetDatabase.ImportAsset(path);
-            AssetDatabase.RenameAsset(path, name);
-            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(k_BuildReportDir + "/" + name) };
+
+            var destination = k_BuildReportDir + "/" + name;
+            if (!File.Exists(destination))
+            {
+                var tempPath = k_BuildReportDir + "/LastBuild.buildreport";
+                File.Copy(k_LastBuildReportFileName, tempPath, true);
+                AssetDatabase.ImportAsset(tempPath);
+                AssetDatabase.RenameAsset(tempPath, name);
+            }
+
+            Selection.objects = new Object[] { AssetDatabase.LoadAssetAtPath<BuildReport>(destination) };
         }
 
         private BuildReport report
