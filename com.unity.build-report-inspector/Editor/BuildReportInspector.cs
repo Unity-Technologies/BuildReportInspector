@@ -69,7 +69,7 @@ namespace Unity.BuildReportInspector
         }
 
 #if !UNITY_6000_0_OR_NEWER
-        private static string m_BuildType;
+        private string m_BuildType;
 #endif
         private string BuildType
         {
