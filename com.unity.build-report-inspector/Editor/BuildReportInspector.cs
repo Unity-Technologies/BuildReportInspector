@@ -648,7 +648,7 @@ namespace Unity.BuildReportInspector
                 if (typeFilter == null)
                     toolTip += " (Type: " + entry.type + ")";
 
-                if (GUILayout.Button(new GUIContent(fileName, toolTip), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
+                if (GUILayout.Button(new GUIContent(displayName, toolTip), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
                     EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
                 GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
                 GUILayout.EndHorizontal();
@@ -665,13 +665,13 @@ namespace Unity.BuildReportInspector
 
             try
             {
-                return Path.GetFileName(entry.path);
+                return Path.GetFileName(path);
             }
             catch (Exception)
             {
                 // revert to path,
                 // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
-                return entry.path;
+                return path;
             }
         }
 
