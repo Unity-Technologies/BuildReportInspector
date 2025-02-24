@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -Add Content Summary tab
 -Fix bug when Asset Bundle / Player build type was not changing when switching selected BuildReport
+-Fix for issue 21 - exception related to sprite altas path parsing.
 
 ## [0.4.1-preview] - 2025-02-18
 

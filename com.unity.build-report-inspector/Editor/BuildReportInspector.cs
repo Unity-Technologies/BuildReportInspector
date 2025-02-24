@@ -643,7 +643,7 @@ namespace Unity.BuildReportInspector
                 GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
 
                 GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
-                var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
+                var displayName = GetDisplayNameForFile(entry.path);
                 var toolTip = entry.path + " (Count: " + entry.objectCount + ")";
                 if (typeFilter == null)
                     toolTip += " (Type: " + entry.type + ")";
@@ -656,6 +656,23 @@ namespace Unity.BuildReportInspector
                 odd = !odd;
             }
             GUILayout.EndVertical();
+        }
+
+        private static string GetDisplayNameForFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return "Unknown";
+
+            try
+            {
+                return Path.GetFileName(entry.path);
+            }
+            catch (Exception)
+            {
+                // revert to path,
+                // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
+                return entry.path;
+            }
         }
 
         Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
@@ -677,8 +694,9 @@ namespace Unity.BuildReportInspector
 
                     // Combine all objects that have the same type and source asset to reduce the overhead,
                     // e.g. no use reporting 1,000 individual gameobjects in the same prefab.
-                    // Note: this won't scale for truly large builds because of the underlying approach of recording
-                    // every single object in the build report, or with high granularity output.  CBD-249
+                    // Note: this still won't scale for truly large builds, because of the underlying approach of recording
+                    // every single object in the build report.
+                    // For those cases the UnityDataTools Analyze tool, which uses an sqlite database, is recommended.
                     var assetTypesInFile = new Dictionary<string, ContentEntry>();
                     foreach (var entry in packedAsset.contents)
                     {
@@ -687,8 +705,7 @@ namespace Unity.BuildReportInspector
                         if (type.EndsWith("Importer"))
                             type = type.Substring(0, type.Length - 8);
 
-                        // With the clustering algorithm and built-in resources then a single output file can contain objects from
-                        // multiple source objects.
+                        // A single output file can contain objects from multiple source objects.
                         var key = type + entry.sourceAssetGUID.ToString();
 
                         if (assetTypesInFile.ContainsKey(key))
