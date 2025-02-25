@@ -69,7 +69,7 @@ namespace Unity.BuildReportInspector
         }
 
 #if !UNITY_6000_0_OR_NEWER
-        private static string m_BuildType;
+        private string m_BuildType;
 #endif
         private string BuildType
         {
@@ -210,6 +210,7 @@ namespace Unity.BuildReportInspector
         private enum ToolbarTabs
         {
             BuildSteps,
+            ContentSummary,
             SourceAssets,
             OutputFiles,
             Stripping,
@@ -220,6 +221,7 @@ namespace Unity.BuildReportInspector
 
         readonly string[] ToolbarTabStrings = {
             "BuildSteps",
+            "ContentSummary",
             "SourceAssets", // Could also be called "Content Details"
             "OutputFiles",
             "Stripping",
@@ -232,6 +234,7 @@ namespace Unity.BuildReportInspector
         // Note: this requires that player-only tabs are always at the end of the list.
         readonly string[] ToolbarTabStringsAssetBundle = {
             "BuildSteps",
+            "ContentSummary",
             "SourceAssets",
             "OutputFiles"
         };
@@ -295,6 +298,9 @@ namespace Unity.BuildReportInspector
             {
                 case ToolbarTabs.BuildSteps:
                     OnBuildStepGUI();
+                    break;
+                case ToolbarTabs.ContentSummary:
+                    OnContentSummaryGUI();
                     break;
                 case ToolbarTabs.SourceAssets:
                     OnSourceAssetsGUI();
@@ -521,6 +527,100 @@ namespace Unity.BuildReportInspector
 
         #endregion
 
+        #region ContentSummary
+
+        ContentSummary m_ContentSummary = null;
+        bool m_FoldOutState_TypeList = false;
+        bool m_FoldOutState_AssetList = false;
+
+        private void OnContentSummaryGUI()
+        {
+            if (m_ContentSummary == null && GUILayout.Button("Calculate"))
+            {
+                m_ContentSummary = new ContentSummary(report);
+            }
+
+            if (m_ContentSummary != null)
+            {
+                BuildOutputStatistics stats = m_ContentSummary.m_Stats;
+
+                EditorGUILayout.LabelField("Serialized File Size: ", FormatSize(stats.totalSerializedFileSize));
+                EditorGUILayout.LabelField("Serialized File Headers: ", FormatSize(stats.totalHeaderSize));
+                EditorGUILayout.LabelField("Resource Data Size: ", FormatSize(stats.totalResourceSize));
+                EditorGUILayout.LabelField("Serialized File Count: ", stats.serializedFileCount.ToString());
+                EditorGUILayout.LabelField("Resource File Count: ", stats.resourceFileCount.ToString());
+                EditorGUILayout.LabelField("Object Count: ", stats.objectCount.ToString());
+
+                EditorGUILayout.LabelField("Object Type Count: ", stats.sortedTypeStats.Length.ToString());
+                EditorGUILayout.LabelField("Source Asset Count: ", stats.sortedAssetStats.Length.ToString());
+
+                EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
+                ShowTypeSizeSummary(stats.sortedTypeStats);
+                ShowAssetSizeSummary(stats.sortedAssetStats);
+            }
+        }
+
+        private void ShowTypeSizeSummary(TypeStats[] typeStats)
+        {
+            m_FoldOutState_TypeList = EditorGUILayout.BeginFoldoutHeaderGroup(m_FoldOutState_TypeList, "Size info by Object Type", EditorStyles.foldoutHeader);
+
+            if (m_FoldOutState_TypeList)
+            {
+                GUILayout.BeginVertical();
+                var odd = false;
+                GUILayout.Space(10);
+
+                foreach (var typeInfo in typeStats)
+                {
+                    GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+
+                    GUILayout.Label(typeInfo.type.FullName);
+                    GUILayout.Space(10);
+                    GUILayout.Label("Object count: " + typeInfo.objectCount, SizeStyle);
+                    GUILayout.Space(10);
+                    GUILayout.Label(FormatSize(typeInfo.size), SizeStyle);
+
+                    GUILayout.EndHorizontal();
+                    odd = !odd;
+                }
+                GUILayout.EndVertical();
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        private void ShowAssetSizeSummary(AssetStats[] assetStats)
+        {
+            m_FoldOutState_AssetList = EditorGUILayout.BeginFoldoutHeaderGroup(m_FoldOutState_AssetList, "Size info by Source Asset", EditorStyles.foldoutHeader);
+
+            if (m_FoldOutState_AssetList)
+            {
+                // Note: some projects may have hundreds of thousands of assets.
+                // The list is sorted by size (decreasing).  It might make sense to limit
+                // to the top "N" assets, with a "show all" button or way to control "N".
+
+                GUILayout.BeginVertical();
+                var odd = false;
+                GUILayout.Space(10);
+
+                foreach (var info in assetStats)
+                {
+                    GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+
+                    GUILayout.Label(new GUIContent(info.sourceAssetPath, info.sourceAssetPath), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
+                    GUILayout.Label("Object count: " + info.objectCount, SizeStyle);
+                    GUILayout.Label(FormatSize(info.size), SizeStyle);
+
+                    GUILayout.EndHorizontal();
+                    odd = !odd;
+                }
+                GUILayout.EndVertical();
+            }
+            EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+        #endregion
+
         #region SourceAssets
         // Size usage detail within the built data.
         // This records the total size of a particular type from a particular source asset within the specified output file
@@ -543,12 +643,12 @@ namespace Unity.BuildReportInspector
                 GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
 
                 GUILayout.Label(entry.icon, GUILayout.MaxHeight(16), GUILayout.Width(20));
-                var fileName = string.IsNullOrEmpty(entry.path) ? "Unknown" : Path.GetFileName(entry.path);
+                var displayName = GetDisplayNameForFile(entry.path);
                 var toolTip = entry.path + " (Count: " + entry.objectCount + ")";
                 if (typeFilter == null)
                     toolTip += " (Type: " + entry.type + ")";
 
-                if (GUILayout.Button(new GUIContent(fileName, toolTip), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
+                if (GUILayout.Button(new GUIContent(displayName, toolTip), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110)))
                     EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(entry.path));
                 GUILayout.Label(FormatSize((ulong)entry.size), SizeStyle);
                 GUILayout.EndHorizontal();
@@ -556,6 +656,23 @@ namespace Unity.BuildReportInspector
                 odd = !odd;
             }
             GUILayout.EndVertical();
+        }
+
+        private static string GetDisplayNameForFile(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return "Unknown";
+
+            try
+            {
+                return Path.GetFileName(path);
+            }
+            catch (Exception)
+            {
+                // revert to path,
+                // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
+                return path;
+            }
         }
 
         Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
@@ -577,8 +694,9 @@ namespace Unity.BuildReportInspector
 
                     // Combine all objects that have the same type and source asset to reduce the overhead,
                     // e.g. no use reporting 1,000 individual gameobjects in the same prefab.
-                    // Note: this won't scale for truly large builds because of the underlying approach of recording
-                    // every single object in the build report, or with high granularity output.  CBD-249
+                    // Note: this still won't scale for truly large builds, because of the underlying approach of recording
+                    // every single object in the build report.
+                    // For those cases the UnityDataTools Analyze tool, which uses an sqlite database, is recommended.
                     var assetTypesInFile = new Dictionary<string, ContentEntry>();
                     foreach (var entry in packedAsset.contents)
                     {
@@ -587,8 +705,7 @@ namespace Unity.BuildReportInspector
                         if (type.EndsWith("Importer"))
                             type = type.Substring(0, type.Length - 8);
 
-                        // With the clustering algorithm and built-in resources then a single output file can contain objects from
-                        // multiple source objects.
+                        // A single output file can contain objects from multiple source objects.
                         var key = type + entry.sourceAssetGUID.ToString();
 
                         if (assetTypesInFile.ContainsKey(key))
@@ -730,8 +847,6 @@ namespace Unity.BuildReportInspector
             }
 
             float vPos = 0;
-            var odd = false;
-
             switch (m_outputDispMode)
             {
                 case OutputFilesDisplayMode.Size:
