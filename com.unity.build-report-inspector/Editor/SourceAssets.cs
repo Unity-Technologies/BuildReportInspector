@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -76,13 +77,17 @@ namespace Unity.BuildReportInspector
                     }
                     else
                     {
+                        string path = entry.sourceAssetPath;
+                        if (string.IsNullOrEmpty(path))
+                            path = "Generated"; // Some build output is generated and not associated with a source Asset
+
                         assetTypesInFile[key] = new ContentEntry
                         {
                             size = entry.packedSize,
                             icon = m_calculateIcon ? AssetDatabase.GetCachedIcon(entry.sourceAssetPath) : null,
                             outputFile = packedAsset.shortPath,
                             type = type,
-                            path = entry.sourceAssetPath,
+                            path = path,
                             objectCount = 1
                         };
                     }
@@ -110,6 +115,54 @@ namespace Unity.BuildReportInspector
             m_assets = m_assets.OrderBy(p => ulong.MaxValue - p.size).ToList();
             m_outputFiles = m_outputFiles.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
             m_assetTypes = m_assetTypes.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        // For larger builds it can be better to analyze using a pivot tables in a spreadsheet or a database.
+        // So this method exports the raw analysis data to a CSV file.
+        // On success this returns an empty string, otherwise it returns a description of the nature of the failure.
+        public string SaveAssetsToCsv(string filePath)
+        {
+            string errorMessage = "";
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    // Header row
+                    writer.WriteLine("SourceAssetPath,OutputFile,Type,Size,ObjectCount");
+
+                    foreach (var asset in m_assets)
+                    {
+                        writer.WriteLine($"{EscapeCsv(asset.path)},{EscapeCsv(asset.outputFile)},{EscapeCsv(asset.type)},{asset.size},{asset.objectCount}");
+                    }
+                }
+                Debug.Log($"Content analysis written to {filePath}");
+            }
+            catch (Exception e)
+            {
+                errorMessage = $"An error occurred while writing to CSV:\n{filePath}\n\n{e.Message}";
+            }
+            return errorMessage;
+        }
+
+        // Escapes a string for use in a CSV file, wrapping it in quotes if it contains special characters (commas, quotes, or newlines).
+        // Quotes in the original string are escaped by doubling them(" -> "").
+        private static string EscapeCsv(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+            {
+                return string.Empty;
+            }
+
+            // Check if the field contains special characters
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+            {
+                // Escape double quotes by doubling them
+                field = field.Replace("\"", "\"\"");
+                // Wrap the field in double quotes
+                return $"\"{field}\"";
+            }
+
+            return field;
         }
 
     }

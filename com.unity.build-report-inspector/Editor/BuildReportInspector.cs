@@ -21,7 +21,7 @@ namespace Unity.BuildReportInspector
         static readonly string k_BuildReportDir = "Assets/BuildReports";
 
         static readonly string k_LastBuildReportFileName = "Library/LastBuild.buildreport";
-        static readonly int k_MaxBuiltEntriesToShow = 10000; // To avoid UI freezing for truly large builds
+        static int k_MaxSourceAssetEntries = 10000; // To avoid UI freezing for truly large builds
 
         [MenuItem("Window/Open Last Build Report", true)]
         public static bool ValidateOpenLastBuild()
@@ -629,8 +629,39 @@ namespace Unity.BuildReportInspector
         private void OnSourceAssetsGUI()
         {
             // The PackedAsset information can be very large for large builds, so this is only calculated on demand
-            if (m_contentAnalysis == null && GUILayout.Button("Calculate"))
-                m_contentAnalysis = new ContentAnalysis(report, k_MaxBuiltEntriesToShow, true);
+            if (m_contentAnalysis == null)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                if (GUILayout.Button("Calculate", GUILayout.Width(200)))
+                    m_contentAnalysis = new ContentAnalysis(report, k_MaxSourceAssetEntries, true);
+
+                if (GUILayout.Button("Export to CSV", GUILayout.Width(200)))
+                {
+                    bool isTempAnalysis = false;
+                    if (m_contentAnalysis == null)
+                    {
+                        m_contentAnalysis = new ContentAnalysis(report, k_MaxSourceAssetEntries, true);
+                        isTempAnalysis = true;
+                    }
+                    string exportPath = AssetDatabase.GetAssetPath(target);
+                    exportPath = Path.ChangeExtension(exportPath, null) + "_SourceAssets.csv";
+
+                    string errorMessage = m_contentAnalysis.SaveAssetsToCsv(exportPath);
+                    if (string.IsNullOrEmpty(errorMessage))
+                        EditorUtility.DisplayDialog("Export Complete", $"Data written to:\n{exportPath}", "OK");
+                    else
+                        EditorUtility.DisplayDialog("Export Failed", errorMessage, "OK");
+
+                    if (isTempAnalysis)
+                        // Doing an export shouldn't also force the results into the UI, which may breakdown for very large builds
+                        m_contentAnalysis = null;
+                }
+
+                k_MaxSourceAssetEntries = EditorGUILayout.IntField("Maximum Entries:", k_MaxSourceAssetEntries);
+
+                EditorGUILayout.EndHorizontal();
+            }
 
             if (m_contentAnalysis != null)
             {
@@ -713,6 +744,9 @@ namespace Unity.BuildReportInspector
             GUILayout.BeginVertical();
             var odd = false;
 
+            // Warning: When filters are specified this would be a linear scans through all the entries to match each filter,
+            // So long as it is only run for open items in the foldout it can work ok for modest sized builds.  For very large builds
+            // better data structures would be needed (or export to other software or write a custom script)
             foreach (var entry in assets.Where(entry => fileFilter == null || fileFilter == entry.outputFile).Where(entry => typeFilter == null || typeFilter == entry.type))
             {
                 GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
