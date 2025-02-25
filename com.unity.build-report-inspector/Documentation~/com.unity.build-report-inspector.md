@@ -107,6 +107,18 @@ For the API equivalent see [PackedAssets](https://docs.unity3d.com/6000.1/Docume
 
 Warning: This view aggregates information about every single object in the build.  Currently this view is so slow that it is unusable for large builds (e.g. large numbers of Assets or prefabs with large GameObject hierarchies).
 
+**Export to CSV**
+
+To analysis the data in different ways than what is offered in the soft method you can also export all the data to csv format.  This will write a file in the same location and name as the BuildReport, but ending with "_SourceAssets.csv".
+
+For reasonably large outputs you can load the results in a spreadsheet and then use pivot tables, filtering or other features to analyze the data.  For very large outputs a database could be a better place to put the data.
+
+This external analysis option could also be helpful for comparing the results from different build.
+
+This is a simple example of analysis of the output from the TestProject, using a pivot table with rows set to OutputFile, Columns set to Type and Values set to Sum of Size.
+
+![Pivot Table](images/sourceassets-pivotexample.png)
+
 ### Output files
 A list of all files written by the build  
 
