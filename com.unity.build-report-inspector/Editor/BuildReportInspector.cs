@@ -21,7 +21,7 @@ namespace Unity.BuildReportInspector
         static readonly string k_BuildReportDir = "Assets/BuildReports";
 
         static readonly string k_LastBuildReportFileName = "Library/LastBuild.buildreport";
-        static readonly int k_MaxBuiltEntriesToShow = 10000; // To avoid UI freezing for truly large builds
+        static int k_MaxSourceAssetEntries = 10000; // To avoid UI freezing for truly large builds
 
         [MenuItem("Window/Open Last Build Report", true)]
         public static bool ValidateOpenLastBuild()
@@ -622,22 +622,131 @@ namespace Unity.BuildReportInspector
         #endregion
 
         #region SourceAssets
-        // Size usage detail within the built data.
-        // This records the total size of a particular type from a particular source asset within the specified output file
-        private struct ContentEntry
+
+        Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
+        ContentAnalysis m_contentAnalysis;
+
+        private void OnSourceAssetsGUI()
         {
-            public string path;       // Source path in the project
-            public ulong size;        // bytes
-            public string outputFile; // name of file in the build output directory
-            public string type;
-            public Texture icon;
-            public int objectCount;
+            // The PackedAsset information can be very large for large builds, so this is only calculated on demand
+            if (m_contentAnalysis == null)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                if (GUILayout.Button("Calculate", GUILayout.Width(200)))
+                    m_contentAnalysis = new ContentAnalysis(report, k_MaxSourceAssetEntries, true);
+
+                if (GUILayout.Button("Export to CSV", GUILayout.Width(200)))
+                {
+                    bool isTempAnalysis = false;
+                    if (m_contentAnalysis == null)
+                    {
+                        m_contentAnalysis = new ContentAnalysis(report, k_MaxSourceAssetEntries, true);
+                        isTempAnalysis = true;
+                    }
+                    string exportPath = AssetDatabase.GetAssetPath(target);
+                    exportPath = Path.ChangeExtension(exportPath, null) + "_SourceAssets.csv";
+
+                    string errorMessage = m_contentAnalysis.SaveAssetsToCsv(exportPath);
+                    if (string.IsNullOrEmpty(errorMessage))
+                        EditorUtility.DisplayDialog("Export Complete", $"Data written to:\n{exportPath}", "OK");
+                    else
+                        EditorUtility.DisplayDialog("Export Failed", errorMessage, "OK");
+
+                    if (isTempAnalysis)
+                        // Doing an export shouldn't also force the results into the UI, which may breakdown for very large builds
+                        m_contentAnalysis = null;
+                }
+
+                k_MaxSourceAssetEntries = EditorGUILayout.IntField("Maximum Entries:", k_MaxSourceAssetEntries);
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (m_contentAnalysis != null)
+            {
+                if (m_contentAnalysis.HitMaximumEntries())
+                    EditorGUILayout.HelpBox("Build has too many objects to show.", MessageType.Info);
+                else if (m_contentAnalysis.m_assets.Count == 0)
+                {
+                    if (report.summary.result == BuildResult.Succeeded)
+                        EditorGUILayout.HelpBox("No PackedAsset information was found.  Was this an incremental build without any new content?", MessageType.Info);
+                    else
+                        // Depending when the build failed there may actually be asset information, so we only display this when nothing was collected
+                        EditorGUILayout.HelpBox("No PackedAsset information was found because the build failed, or was canceled.", MessageType.Info);
+                }
+                else
+                {
+                    DisplayAssetsView();
+                }
+            }
         }
 
+        private void DisplayAssetsView()
+        {
+            float vPos = 0;
+            switch (m_sourceDispMode)
+            {
+                case SourceAssetsDisplayMode.Size:
+                    // List all content by source and size
+                    // There will be multiple items per source if it has objects of different types inside it
+                    ShowAssets(m_contentAnalysis.m_assets, ref vPos);
+                    break;
+                case SourceAssetsDisplayMode.OutputDataFiles:
+                    // Group content by the output file (with size total for all objects of a particular type within each source)
+                    foreach (var outputFile in m_contentAnalysis.m_outputFiles)
+                    {
+                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
+                            m_assetsFoldout[outputFile.Key] = false;
+
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(10);
+                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
+                        GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
+                        GUILayout.EndHorizontal();
+
+                        vPos += k_LineHeight;
+
+                        if (m_assetsFoldout[outputFile.Key])
+                            ShowAssets(m_contentAnalysis.m_assets, ref vPos, outputFile.Key);
+                    }
+                    break;
+                case SourceAssetsDisplayMode.ImporterType:
+                    // Group content by type (with total size of objects of that type listed from each source)
+                    foreach (var outputFile in m_contentAnalysis.m_assetTypes)
+                    {
+                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
+                            m_assetsFoldout[outputFile.Key] = false;
+
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Space(10);
+                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
+                        GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
+                        GUILayout.EndHorizontal();
+
+                        vPos += k_LineHeight;
+
+                        if (m_assetsFoldout[outputFile.Key])
+                            ShowAssets(m_contentAnalysis.m_assets, ref vPos, null, outputFile.Key);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        // Display rows for all ContentEntrys that match the filters.
+        // When no filters passed then all ContentEntries are displayed (they are already sorted by descending size)
+        // If fileFilter is specified then only entries from that file are displayed
+        // And similar when a typeFilter is specified.
         private static void ShowAssets(IEnumerable<ContentEntry> assets, ref float vPos, string fileFilter = null, string typeFilter = null)
         {
             GUILayout.BeginVertical();
             var odd = false;
+
+            // Warning: When filters are specified this would be a linear scans through all the entries to match each filter,
+            // So long as it is only run for open items in the foldout it can work ok for modest sized builds.  For very large builds
+            // better data structures would be needed (or export to other software or write a custom script)
             foreach (var entry in assets.Where(entry => fileFilter == null || fileFilter == entry.outputFile).Where(entry => typeFilter == null || typeFilter == entry.type))
             {
                 GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
@@ -672,145 +781,6 @@ namespace Unity.BuildReportInspector
                 // revert to path,
                 // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
                 return path;
-            }
-        }
-
-        Dictionary<string, bool> m_assetsFoldout = new Dictionary<string, bool>();
-        List<ContentEntry> m_assets; // records contents of the build output.  Objects of the same type within the same file are collapsed together to single entry
-        Dictionary<string, ulong> m_outputFiles; // Filepath -> size
-        Dictionary<string, ulong> m_assetTypes;  // Type -> size
-
-        private void OnSourceAssetsGUI()
-        {
-            var vPos = 0;
-            if (m_assets == null)
-            {
-                m_assets = new List<ContentEntry>();
-                m_outputFiles = new Dictionary<string, ulong>();
-                m_assetTypes = new Dictionary<string, ulong>();
-                foreach (var packedAsset in report.packedAssets)
-                {
-                    m_outputFiles[packedAsset.shortPath] = packedAsset.overhead;
-
-                    // Combine all objects that have the same type and source asset to reduce the overhead,
-                    // e.g. no use reporting 1,000 individual gameobjects in the same prefab.
-                    // Note: this still won't scale for truly large builds, because of the underlying approach of recording
-                    // every single object in the build report.
-                    // For those cases the UnityDataTools Analyze tool, which uses an sqlite database, is recommended.
-                    var assetTypesInFile = new Dictionary<string, ContentEntry>();
-                    foreach (var entry in packedAsset.contents)
-                    {
-                        var type = entry.type.ToString();
-
-                        if (type.EndsWith("Importer"))
-                            type = type.Substring(0, type.Length - 8);
-
-                        // A single output file can contain objects from multiple source objects.
-                        var key = type + entry.sourceAssetGUID.ToString();
-
-                        if (assetTypesInFile.ContainsKey(key))
-                        {
-                            // update the statistics
-                            var existingEntry = assetTypesInFile[key];
-                            existingEntry.size += entry.packedSize;
-                            existingEntry.objectCount++;
-                            assetTypesInFile[key] = existingEntry;
-                        }
-                        else
-                        {
-                            assetTypesInFile[key] = new ContentEntry
-                            {
-                                size = entry.packedSize,
-                                icon = AssetDatabase.GetCachedIcon(entry.sourceAssetPath),
-                                outputFile = packedAsset.shortPath,
-                                type = type,
-                                path = entry.sourceAssetPath,
-                                objectCount = 1
-                            };
-                        }
-                    }
-
-                    foreach (var entry in assetTypesInFile)
-                    {
-                        m_assets.Add(entry.Value);
-
-                        var sizeProp = entry.Value.size;
-                        m_outputFiles[packedAsset.shortPath] += sizeProp;
-                        if (!m_assetTypes.ContainsKey(entry.Value.type))
-                            m_assetTypes[entry.Value.type] = 0;
-                        m_assetTypes[entry.Value.type] += sizeProp;
-
-                        if (m_assets.Count == k_MaxBuiltEntriesToShow)
-                            break;
-                    }
-
-                    if (m_assets.Count == k_MaxBuiltEntriesToShow)
-                        break;
-                }
-
-                // Sort m_assets in descending order by size
-                m_assets = m_assets.OrderBy(p => ulong.MaxValue - p.size).ToList();
-                m_outputFiles = m_outputFiles.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
-                m_assetTypes = m_assetTypes.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
-            }
-            DisplayAssetsView(vPos);
-        }
-
-        private void DisplayAssetsView(float vPos)
-        {
-            if (m_assets.Count >= k_MaxBuiltEntriesToShow)
-            {
-                EditorGUILayout.HelpBox("Build has too many objects to show.", MessageType.Info);
-                return;
-            }
-
-            switch (m_sourceDispMode)
-            {
-                case SourceAssetsDisplayMode.Size:
-                    // List all content by source and size
-                    // There will be multiple items per source if it has objects of different types inside it
-                    ShowAssets(m_assets, ref vPos);
-                    break;
-                case SourceAssetsDisplayMode.OutputDataFiles:
-                    // Group content by the output file (with size total for all objects of a particular type within each source)
-                    foreach (var outputFile in m_outputFiles)
-                    {
-                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
-                            m_assetsFoldout[outputFile.Key] = false;
-
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Space(10);
-                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                        GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
-                        GUILayout.EndHorizontal();
-
-                        vPos += k_LineHeight;
-
-                        if (m_assetsFoldout[outputFile.Key])
-                            ShowAssets(m_assets, ref vPos, outputFile.Key);
-                    }
-                    break;
-                case SourceAssetsDisplayMode.ImporterType:
-                    // Group content by type (with total size of objects of that type listed from each source)
-                    foreach (var outputFile in m_assetTypes)
-                    {
-                        if (!m_assetsFoldout.ContainsKey(outputFile.Key))
-                            m_assetsFoldout[outputFile.Key] = false;
-
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Space(10);
-                        m_assetsFoldout[outputFile.Key] = EditorGUILayout.Foldout(m_assetsFoldout[outputFile.Key], outputFile.Key, DataFileStyle);
-                        GUILayout.Label(FormatSize((ulong)outputFile.Value), SizeStyle);
-                        GUILayout.EndHorizontal();
-
-                        vPos += k_LineHeight;
-
-                        if (m_assetsFoldout[outputFile.Key])
-                            ShowAssets(m_assets, ref vPos, null, outputFile.Key);
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
         }
 

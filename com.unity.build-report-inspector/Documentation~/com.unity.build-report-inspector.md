@@ -87,6 +87,10 @@ The data shown in this view is only calculated on-demand, because the PackedAsse
 
 ![ContentSummary](images/ContentSummary.png)
 
+Here is another example, from a much larger build:
+
+![ContentSummary](images/ContentSummary-largeBuild.png)
+
 ### Source assets
 
 This page displays information about the objects and resources (audio clips, meshes and textures) and how they contribute to the build size.   It shows details than the Content Summary tab.
@@ -106,6 +110,10 @@ There are three available views:
 For the API equivalent see [PackedAssets](https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Build.Reporting.PackedAssets.html).
 
 Warning: This view aggregates information about every single object in the build.  Currently this view is so slow that it is unusable for large builds (e.g. large numbers of Assets or prefabs with large GameObject hierarchies).
+
+**Export to CSV**
+
+See [Exporting and Analysis](./exporting-and-analysis.md) for more details.
 
 ### Output files
 A list of all files written by the build  
