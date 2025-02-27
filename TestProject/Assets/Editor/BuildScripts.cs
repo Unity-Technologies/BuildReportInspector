@@ -7,12 +7,23 @@ using UnityEditor.Build.Reporting;
 public class BuildScripts
 {
     // DetailedBuildReport is not available in the UI so this custom build script adds in the flag
-    [MenuItem("Build/Build Player")]
+    [MenuItem("Build/Build Player (Detailed Report)")]
     public static void BuildPlayer()
+    {
+        BuildPlayerWithAdditionalOptions(BuildOptions.DetailedBuildReport);
+    }
+
+    [MenuItem("Build/Build Player (Compressed)")]
+    public static void BuildPlayerCompressed()
+    {
+        BuildPlayerWithAdditionalOptions(BuildOptions.CompressWithLz4HC);
+    }
+
+    public static void BuildPlayerWithAdditionalOptions(BuildOptions additionalOptions)
     {
         // Use the settings from the Player window, including scene list.  This will pop up a window for selecting the output
         BuildPlayerOptions buildParameters = BuildPlayerWindow.DefaultBuildMethods.GetBuildPlayerOptions(new BuildPlayerOptions());
-        buildParameters.options |= BuildOptions.DetailedBuildReport;
+        buildParameters.options |= additionalOptions;
 
         // When repeating builds by default the previous content is reused and not reported in the build report
         // so clean builds can be useful when testing (but of course much slower)
