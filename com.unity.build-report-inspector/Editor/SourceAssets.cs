@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -15,11 +16,13 @@ namespace Unity.BuildReportInspector
     // This records the total size of a particular type from a particular source asset within the specified output file
     public struct ContentEntry
     {
-        public string path;       // Source path in the project
-        public ulong size;        // bytes
-        public string outputFile; // name of file in the build output directory
+        public string path;        // Source path in the project
+        public ulong size;         // bytes
+        public string outputFile;  // name of file in the build output directory
+        public string internalArchivePath; // name of file inside AssetBundle (empty for player build)
         public string type;
         public int objectCount;
+        public string extension;   // File extension of the source path (e.g. ".jpg")
 
         public Texture icon; // Only required when displaying in the UI
     }
@@ -47,9 +50,27 @@ namespace Unity.BuildReportInspector
             m_assets = new List<ContentEntry>();
             m_outputFiles = new Dictionary<string, ulong>();
             m_assetTypes = new Dictionary<string, ulong>();
+
+            var internalNameToArchiveMapping = new Dictionary<string, string>();
+            CalculateAssetBundleMapping(report, internalNameToArchiveMapping);
+
             foreach (var packedAsset in report.packedAssets)
             {
-                m_outputFiles[packedAsset.shortPath] = packedAsset.overhead;
+                string outputFile = "";
+                string internalArchivePath = "";
+                if (internalNameToArchiveMapping.ContainsKey(packedAsset.shortPath))
+                {
+                    internalArchivePath = packedAsset.shortPath;
+                    outputFile = internalNameToArchiveMapping[packedAsset.shortPath];
+                }
+                else
+                {
+                    outputFile = packedAsset.shortPath;
+                }
+
+                if (!m_outputFiles.ContainsKey(outputFile))
+                    m_outputFiles[outputFile] = 0;
+                m_outputFiles[outputFile] += packedAsset.overhead;
 
                 // Combine all objects that have the same type and source asset to reduce the overhead,
                 // e.g. no use reporting 1,000 individual gameobjects in the same prefab.
@@ -85,9 +106,11 @@ namespace Unity.BuildReportInspector
                         {
                             size = entry.packedSize,
                             icon = m_calculateIcon ? AssetDatabase.GetCachedIcon(entry.sourceAssetPath) : null,
-                            outputFile = packedAsset.shortPath,
+                            outputFile = outputFile,
+                            internalArchivePath = internalArchivePath,
                             type = type,
                             path = path,
+                            extension = Path.GetExtension(path),
                             objectCount = 1
                         };
                     }
@@ -98,7 +121,7 @@ namespace Unity.BuildReportInspector
                     m_assets.Add(entry.Value);
 
                     var sizeProp = entry.Value.size;
-                    m_outputFiles[packedAsset.shortPath] += sizeProp;
+                    m_outputFiles[outputFile] += sizeProp;
                     if (!m_assetTypes.ContainsKey(entry.Value.type))
                         m_assetTypes[entry.Value.type] = 0;
                     m_assetTypes[entry.Value.type] += sizeProp;
@@ -117,6 +140,65 @@ namespace Unity.BuildReportInspector
             m_assetTypes = m_assetTypes.OrderBy(p => ulong.MaxValue - p.Value).ToDictionary(x => x.Key, x => x.Value);
         }
 
+        private void CalculateAssetBundleMapping(BuildReport report, Dictionary<string, string> mapping)
+        {
+            mapping.Clear();
+
+#if UNITY_6000_0_OR_NEWER
+            if (report.summary.buildType == BuildType.Player)
+                return;
+#endif
+            var files = report.GetFiles();
+
+            // Map between the internal file names inside Archive files back to the Archive filename.
+            // Currently this only applies to AssetBundle builds, which can have many output files and which use hard to understand internal file names.
+            // For compressed Player builds the PackedAssets reports the internal files, but the file list does not report the unity3d content,
+            // so this code will not pick up the mapping.  However because there is only a single unity3d file on most platforms this is less important
+
+            /*
+            Example input:
+
+            - path: C:/Src/TestProject/Build/AssetBundles/audio.bundle/CAB-76a378bdc9304bd3c3a82de8dd97981a.resource
+              role: StreamingResourceFile
+            ...
+            - path: C:/Src/TestProject/Build/AssetBundles/audio.bundle
+              role: AssetBundle
+            ...
+
+            Result:
+            CAB-76a378bdc9304bd3c3a82de8dd97981a.resource -> audio.bundle
+            */
+
+
+            // Track full path to just the archive filename for any AssetBundles in the build output
+            var archivePathToFileName = new Dictionary<string, string>();
+            foreach (var file in files)
+            {
+                if (file.role == CommonRoles.assetBundle ||
+                    file.role == CommonRoles.manifestAssetBundle)
+                {
+                    var justFileName = Path.GetFileName(file.path);
+                    archivePathToFileName[file.path] = justFileName;
+                }
+            }
+
+            if (archivePathToFileName.Count() == 0)
+                return;
+
+            // Find files that have paths inside one of the AssetBundle paths
+            var internalNameToArchiveMapping = new Dictionary<string, string>();
+            foreach (var file in files)
+            {
+                // This assumes that the files are not in subdirectory inside the archive
+                var justPath = Path.GetDirectoryName(file.path).Replace('\\', '/');
+                var justFileName = Path.GetFileName(file.path);
+                if (archivePathToFileName.ContainsKey(justPath))
+                {
+                    mapping[justFileName] = archivePathToFileName[justPath];
+                }
+            }
+        }
+
         // For larger builds it can be better to analyze using a pivot tables in a spreadsheet or a database.
         // So this method exports the raw analysis data to a CSV file.
         // On success this returns an empty string, otherwise it returns a description of the nature of the failure.
@@ -128,11 +210,11 @@ namespace Unity.BuildReportInspector
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     // Header row
-                    writer.WriteLine("SourceAssetPath,OutputFile,Type,Size,ObjectCount");
+                    writer.WriteLine("SourceAssetPath,OutputFile,Type,Size,ObjectCount,Extension,AssetBundlePath");
 
                     foreach (var asset in m_assets)
                     {
-                        writer.WriteLine($"{EscapeCsv(asset.path)},{EscapeCsv(asset.outputFile)},{EscapeCsv(asset.type)},{asset.size},{asset.objectCount}");
+                        writer.WriteLine($"{EscapeCsv(asset.path)},{EscapeCsv(asset.outputFile)},{EscapeCsv(asset.type)},{asset.size},{asset.objectCount},{asset.extension},{asset.internalArchivePath}");
                     }
                 }
                 Debug.Log($"Content analysis written to {filePath}");

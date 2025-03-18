@@ -114,7 +114,7 @@ Note: in the case of AssetBundles the objects from a source asset can get duplic
 
 This page displays information about the objects and resources (audio clips, meshes and textures) and how they contribute to the build size.   It shows details than the Content Summary tab.
 
-Note: objects inside Scene files are not shown.
+Warning: Objects inside Scene files are currently not reported in the BuildReport (e.g. no PackedAssets are generated for level files).
 
 ![SourceAssets](images/SourceAssets.png)
 
@@ -128,6 +128,10 @@ There are three available views:
 
 For the API equivalent see [PackedAssets](https://docs.unity3d.com/6000.1/Documentation/ScriptReference/Build.Reporting.PackedAssets.html).
 
+In the case of AssetBundle builds the AssetBundle name is shown instead of the internal archive filename when you sort by Output Data File.
+
+![](images/sourceassets-assetbundle.png)
+
 Warning: This view aggregates information about every single object in the build.  Currently this view is so slow that it is unusable for large builds (e.g. large numbers of Assets or prefabs with large GameObject hierarchies).
 
 **Export to CSV**
@@ -139,8 +143,11 @@ A list of all files written by the build
 
 ![OutputFiles](images/OutputFiles.png)
 
+
 An example for an AssetBundle build:
 ![OutputFiles](images/OutputFiles_AssetBundle.png)
+
+Note: in the case of AssetBundles Unity will report the contents of the Archive file in the file list.  E.g. these files are inside the AssetBundle and not visible in the file system.  In the case of a compressed Player build Unity does not currently report the files inside the data.unity3d archive.  In both cases, the files inside the archive can be extracted using the WebExtract tool.
 
 For the API equivalent see [BuildReport.GetFiles](https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.GetFiles.html).
 

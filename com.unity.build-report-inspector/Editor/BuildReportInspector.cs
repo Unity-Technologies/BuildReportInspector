@@ -163,6 +163,7 @@ namespace Unity.BuildReportInspector
 
         private const int k_LineHeight = 20;
 
+        // Potentially useful sorting to add would be source asset filepath and source asset file extension
         private enum SourceAssetsDisplayMode
         {
             Size,
@@ -172,6 +173,7 @@ namespace Unity.BuildReportInspector
 
         private enum OutputFilesDisplayMode
         {
+            FilePath,
             Size,
             Role
         };
@@ -819,6 +821,10 @@ namespace Unity.BuildReportInspector
             float vPos = 0;
             switch (m_outputDispMode)
             {
+                case OutputFilesDisplayMode.FilePath:
+                    Array.Sort(files, (fileA, fileB) => { return fileB.path.CompareTo(fileA.path); });
+                    ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);
+                    break;
                 case OutputFilesDisplayMode.Size:
                     Array.Sort(files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
                     ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);

@@ -49,7 +49,9 @@ CREATE TABLE $TABLE_NAME (
     OutputFile TEXT,
     Type TEXT,
     Size INTEGER,
-    ObjectCount INTEGER
+    ObjectCount INTEGER,
+	Extension TEXT,
+	AssetBundlePath TEXT
 );
 "@
 
@@ -67,6 +69,6 @@ Write-Host "Cleaning up temporary file..."
 Remove-Item $tempCsv -Force
 
 Write-Host "Import Complete. Querying the count of rows in '$TABLE_NAME':"
-& sqlite3 $DB_FILE "SELECT COUNT(*) FROM $TABLE_NAME LIMIT 5;"
+& sqlite3 $DB_FILE "SELECT COUNT(*) FROM $TABLE_NAME;"
 
 Write-Host "Script completed successfully! Data was imported into '$DB_FILE'."

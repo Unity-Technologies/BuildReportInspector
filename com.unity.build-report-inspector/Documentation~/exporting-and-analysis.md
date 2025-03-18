@@ -18,6 +18,8 @@ This is a simple example of analysis of the output from the TestProject, using a
 
 For very large outputs, a database could be a better place to put the data.  Databases can easily handle millions of entries.  For example `SQLite` is a widely used and freely available database that can be downloaded and run locally from the command line, or with a SQLite GUI utility.
 
+![Sqlite Example](images/sqlite-sourceasset-example.png)
+
 This is an example script for converting the cvs file output from the Source Assets tab into a SQLite database: [source_asset_to_sqlite.ps1](./source_asset_to_sqlite.ps1)
 
 Once the data is in SQLite you can perform queries, for example this query will count how many Unity objects were built from prefab files.

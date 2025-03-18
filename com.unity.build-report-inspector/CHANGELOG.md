@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.4-preview] - 2025-03-18
+
+-Use AssetBundle name instead of internal file name in SourceAssets tab when sorting by output file path
+-CSV format exports both AssetBundle file name and internal name.  Issue #43
+-New column in CSV format for file extension of source path (e.g. ".unity", ".jpg").  Useful for analyzing by file type.
+-Ability to sort by file path on File tab
+
 ## [0.4.3-preview] - 2025-02-25
 
 -Add ability to export SourceAsset data to CVS
