@@ -6,29 +6,39 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.4.4-preview] - 2025-03-18
 
--Use AssetBundle name instead of internal file name in SourceAssets tab when sorting by output file path
--CSV format exports both AssetBundle file name and internal name.  Issue #43
--New column in CSV format for file extension of source path (e.g. ".unity", ".jpg").  Useful for analyzing by file type.
--Ability to sort by file path on File tab
+### Added
+- Use AssetBundle name instead of internal file name in SourceAssets tab when sorting by output file path
+- CSV format exports both AssetBundle file name and internal name.  Issue #43
+- New column in CSV format for file extension of source path (e.g. ".unity", ".jpg").  Useful for analyzing by file type.
+- Ability to sort by file path on File tab
 
 ## [0.4.3-preview] - 2025-02-25
 
--Add ability to export SourceAsset data to CVS
--Expose the maximum SourceAsset row count in the UI to remove hardcoded internal limit.
+### Added
+- Add ability to export SourceAsset data to CVS
+- Expose the maximum SourceAsset row count in the UI to remove hard coded internal limit.
 
 ## [0.4.2-preview] - 2025-02-21
 
--Add Content Summary tab
--Fix bug when Asset Bundle / Player build type was not changing when switching selected BuildReport
--Fix for issue 21 - exception related to sprite altas path parsing.
+### Added
+- Add Content Summary tab
+
+### Fixed
+- Fix bug when Asset Bundle / Player build type was not changing when switching selected BuildReport
+- Fix for issue #21 - exception related to SpriteAltas path parsing.
 
 ## [0.4.1-preview] - 2025-02-18
 
--Drop support for versions older than 2019.3.  Tested on the oldest version that is still LTS, 2021.3.
--Fix SourceAsset performance, fold-out issue
--Fix menu item behavior when BuildReport was already copied into project
--Show BuildType and Build output directory
--Fix test project compilation.  Test project has menu item for building with "Detailed Build Report" option enabled.
+### Added
+- Show BuildType and Build output directory
+
+### Fixed
+- Fix SourceAsset performance, fold-out issue
+- Fix menu item behavior when BuildReport was already copied into project
+- Fix test project compilation.  Test project has menu item for building with "Detailed Build Report" option enabled.
+
+### Deprecated
+- Drop support for versions older than 2019.3.  Tested on the oldest version that is still LTS, 2021.3.
 
 ## [0.4.0-preview] - 2025-02-17
 
