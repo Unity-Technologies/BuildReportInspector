@@ -548,7 +548,7 @@ namespace Unity.BuildReportInspector
 
                 EditorGUILayout.LabelField("Serialized File Size: ", FormatSize(stats.totalSerializedFileSize));
                 EditorGUILayout.LabelField("Serialized File Headers: ", FormatSize(stats.totalHeaderSize));
-                EditorGUILayout.LabelField("Resource Data Size: ", FormatSize(stats.totalResourceSize));
+                EditorGUILayout.LabelField("Resource Data Size: ", FormatSize(stats.totalStreamingResourceSize));
                 EditorGUILayout.LabelField("Serialized File Count: ", stats.serializedFileCount.ToString());
                 EditorGUILayout.LabelField("Resource File Count: ", stats.resourceFileCount.ToString());
                 EditorGUILayout.LabelField("Object Count: ", stats.objectCount.ToString());
