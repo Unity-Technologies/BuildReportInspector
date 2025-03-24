@@ -32,6 +32,8 @@ namespace Unity.BuildReportInspector
         public Dictionary<string, ulong> m_outputFiles; // Filepath -> size
         public Dictionary<string, ulong> m_assetTypes;  // Type -> size
 
+        private static readonly Texture DefaultAssetIcon = EditorGUIUtility.IconContent("DefaultAsset Icon").image;
+
         bool m_calculateIcon = true;
         int m_maxEntries = 0;
 
@@ -102,7 +104,7 @@ namespace Unity.BuildReportInspector
                         assetTypesInFile[key] = new ContentEntry
                         {
                             size = entry.packedSize,
-                            icon = m_calculateIcon ? AssetDatabase.GetCachedIcon(entry.sourceAssetPath) : null,
+                            icon = m_calculateIcon ? AssetDatabase.GetCachedIcon(entry.sourceAssetPath) ?? DefaultAssetIcon : null,
                             outputFile = outputFile,
                             internalArchivePath = internalArchivePath,
                             type = type,

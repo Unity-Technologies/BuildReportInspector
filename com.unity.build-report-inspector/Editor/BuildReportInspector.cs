@@ -771,19 +771,21 @@ namespace Unity.BuildReportInspector
 
         private static string GetDisplayNameForFile(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                return "Unknown";
-
+            string displayName = null;
             try
             {
-                return Path.GetFileName(path);
+                displayName = Path.GetFileName(path)?.Trim();
             }
             catch (Exception)
             {
-                // revert to path,
-                // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
-                return path;
             }
+
+            if (!string.IsNullOrEmpty(displayName))
+                return displayName;
+
+            // Source Asset is not always a real path, for example it could be a pseudo path
+            // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
+            return string.IsNullOrEmpty(path) ? "Generated" : path;
         }
 
         #endregion
