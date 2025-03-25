@@ -166,9 +166,9 @@ namespace Unity.BuildReportInspector
         // Potentially useful sorting to add would be source asset filepath and source asset file extension
         private enum SourceAssetsDisplayMode
         {
+            ImporterType,  // Show by default because it will be a reasonable sized list even for very large builds
             Size,
-            OutputDataFiles,
-            ImporterType
+            OutputDataFiles
         };
 
         private enum OutputFilesDisplayMode
@@ -691,11 +691,14 @@ namespace Unity.BuildReportInspector
             {
                 case SourceAssetsDisplayMode.Size:
                     // List all content by source and size
-                    // There will be multiple items per source if it has objects of different types inside it
+                    // There will be multiple items per source if it has objects of different types inside it.
                     ShowAssets(m_contentAnalysis.m_assets, ref vPos);
                     break;
                 case SourceAssetsDisplayMode.OutputDataFiles:
                     // Group content by the output file (with size total for all objects of a particular type within each source)
+                    // Note: the current implementation is not efficient for large datasets if the foldout gets opened.
+                    // That is because populating entries inside the foldout does a full scan of all entries.  Because
+                    // everything is closed by default this is probably ok for the moment.
                     foreach (var outputFile in m_contentAnalysis.m_outputFiles)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))
@@ -715,6 +718,7 @@ namespace Unity.BuildReportInspector
                     break;
                 case SourceAssetsDisplayMode.ImporterType:
                     // Group content by type (with total size of objects of that type listed from each source)
+                    // This follows the exact same pattern as the OutputDataFiles case
                     foreach (var outputFile in m_contentAnalysis.m_assetTypes)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))

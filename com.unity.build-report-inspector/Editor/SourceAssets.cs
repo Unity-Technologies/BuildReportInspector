@@ -29,8 +29,8 @@ namespace Unity.BuildReportInspector
     public class ContentAnalysis
     {
         public List<ContentEntry> m_assets; // records contents of the build output.  Objects of the same type within the same file are collapsed together to single entry
-        public Dictionary<string, ulong> m_outputFiles; // Filepath -> size
-        public Dictionary<string, ulong> m_assetTypes;  // Type -> size
+        public Dictionary<string, ulong> m_outputFiles; // Filepath -> size (Sorted biggest to smallest)
+        public Dictionary<string, ulong> m_assetTypes;  // Type -> size (Sorted biggest to smallest)
 
         private static readonly Texture DefaultAssetIcon = EditorGUIUtility.IconContent("DefaultAsset Icon").image;
 
