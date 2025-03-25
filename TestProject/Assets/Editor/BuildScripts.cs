@@ -48,6 +48,10 @@ public class BuildScripts
         if (!Directory.Exists(assetBundleDirectory))
             Directory.CreateDirectory(assetBundleDirectory);
 
+        // This is an optional utility that collects information about what happens during an incremental AssetBundle build
+        IncrementalBuildReporter incrementalBuildReporter = new IncrementalBuildReporter(assetBundleDirectory);
+        incrementalBuildReporter.ReportToConsole();
+
         // Tip: For demo purposes this code puts assets of the same type all together in the same bundle.
         // For real life usage this is not usually a good pattern, unless you always want to download and
         // load all of them at the same time.
@@ -112,5 +116,8 @@ public class BuildScripts
         bool success = (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded);
         Debug.Log($"Build to {assetBundleDirectory} {(success ? "succeeded." : "failed.")}\n" +
             "Select \"Window / Open Last Build Report\" from the Menu to view the results.");
+
+        incrementalBuildReporter.DetectBuildResults();
+        incrementalBuildReporter.ReportToConsole();
     }
 }
