@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using Object = UnityEngine.Object;
 using Unity.BuildReportInspector.Mobile;
+using System.Diagnostics.Eventing.Reader;
 
 namespace Unity.BuildReportInspector
 {
@@ -184,7 +185,7 @@ namespace Unity.BuildReportInspector
             UncompressedSize
         }
 
-        ToolbarTabs m_mode;
+        int m_tabIndex;
         SourceAssetsDisplayMode m_sourceDispMode;
         OutputFilesDisplayMode m_outputDispMode;
         MobileOutputDisplayMode m_mobileOutputDispMode;
@@ -209,37 +210,12 @@ namespace Unity.BuildReportInspector
 
         #region MainUI
 
-        private enum ToolbarTabs
-        {
-            BuildSteps,
-            ContentSummary,
-            SourceAssets,
-            OutputFiles,
-            Stripping,
-#if UNITY_2020_1_OR_NEWER
-            ScenesUsingAssets,
-#endif
-        };
-
-        readonly string[] ToolbarTabStrings = {
-            "BuildSteps",
-            "ContentSummary",
-            "SourceAssets", // Could also be called "Content Details"
-            "OutputFiles",
-            "Stripping",
-    #if UNITY_2020_1_OR_NEWER
-            "ScenesUsingAssets",
-    #endif
-        };
-
-        // The Stripping and ScenesUsingAssets don't apply to AssetBundle builds.
-        // Note: this requires that player-only tabs are always at the end of the list.
-        readonly string[] ToolbarTabStringsAssetBundle = {
-            "BuildSteps",
-            "ContentSummary",
-            "SourceAssets",
-            "OutputFiles"
-        };
+        const string kToolbarTabContentBuildSteps = "BuildSteps";
+        const string kToolbarTabContentSummary = "ContentSummary";
+        const string kToolbarTabSourceAssets = "SourceAssets";  // Could also be called "Content Details"
+        const string kToolbarTabOutputFiles = "OutputFiles";
+        const string kToolbarTabStripping = "Stripping";
+        const string kToolbarTabScenesUsingAssets = "ScenesUsingAssets";
 
         /// <summary>
         /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
@@ -265,17 +241,29 @@ namespace Unity.BuildReportInspector
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
 
-            if (BuildType == "AssetBundle")
-                // Hide a few tabs which are never populated for AssetBundles
-                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStringsAssetBundle);
-            else
-                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStrings);
+            var tabLabels = new List<string>() {
+                kToolbarTabContentBuildSteps,
+                kToolbarTabContentSummary,
+                kToolbarTabSourceAssets,
+                kToolbarTabOutputFiles
+            };
 
-            if (m_mode == ToolbarTabs.SourceAssets)
+            if (BuildType == "Player")
+            {
+                // The Stripping and ScenesUsingAssets don't apply to AssetBundle builds.
+#if UNITY_2020_1_OR_NEWER
+                tabLabels.Add(kToolbarTabStripping);
+#endif
+                tabLabels.Add(kToolbarTabScenesUsingAssets);
+            }
+
+            m_tabIndex = GUILayout.Toolbar(m_tabIndex, tabLabels.ToArray());
+
+            if (tabLabels[m_tabIndex] == kToolbarTabSourceAssets)
             {
                 m_sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", m_sourceDispMode);
             }
-            else if (m_mode == ToolbarTabs.OutputFiles)
+            else if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles)
             {
                 if (mobileAppendix != null)
                 {
@@ -287,7 +275,7 @@ namespace Unity.BuildReportInspector
                 }
             }
 
-            if (m_mode == ToolbarTabs.OutputFiles && mobileAppendix != null)
+            if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("File"), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
@@ -296,34 +284,27 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndHorizontal();
             }
 
-            switch (m_mode)
+            if (tabLabels[m_tabIndex] == kToolbarTabContentBuildSteps)
+                OnBuildStepGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabContentSummary)
+                OnContentSummaryGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabSourceAssets)
+                OnSourceAssetsGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles)
             {
-                case ToolbarTabs.BuildSteps:
-                    OnBuildStepGUI();
-                    break;
-                case ToolbarTabs.ContentSummary:
-                    OnContentSummaryGUI();
-                    break;
-                case ToolbarTabs.SourceAssets:
-                    OnSourceAssetsGUI();
-                    break;
-                case ToolbarTabs.OutputFiles:
-                    if (mobileAppendix == null)
-                        OnOutputFilesGUI();
-                    else
-                        OnMobileOutputFilesGUI();
-                    break;
-                case ToolbarTabs.Stripping:
-                    OnStrippingGUI();
-                    break;
-#if UNITY_2020_1_OR_NEWER
-                case ToolbarTabs.ScenesUsingAssets:
-                    OnScenesUsingAssetsGUI();
-                    break;
-#endif
-                default:
-                    throw new ArgumentOutOfRangeException();
+                if (mobileAppendix == null)
+                    OnOutputFilesGUI();
+                else
+                    OnMobileOutputFilesGUI();
             }
+            else if (tabLabels[m_tabIndex] == kToolbarTabStripping)
+                OnStrippingGUI();
+#if UNITY_2020_1_OR_NEWER
+            else if (tabLabels[m_tabIndex] == kToolbarTabScenesUsingAssets)
+                OnScenesUsingAssetsGUI();
+#endif
+            else
+                throw new ArgumentOutOfRangeException();
         }
 
         private void OnMobileAppendixGUI()
