@@ -216,6 +216,7 @@ namespace Unity.BuildReportInspector
         const string kToolbarTabOutputFiles = "OutputFiles";
         const string kToolbarTabStripping = "Stripping";
         const string kToolbarTabScenesUsingAssets = "ScenesUsingAssets";
+        const string kToolbarTabDuplicateAssets = "DuplicateAssets";
 
         /// <summary>
         /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
@@ -255,6 +256,10 @@ namespace Unity.BuildReportInspector
                 tabLabels.Add(kToolbarTabStripping);
 #endif
                 tabLabels.Add(kToolbarTabScenesUsingAssets);
+            }
+            else
+            {
+                tabLabels.Add(kToolbarTabDuplicateAssets);
             }
 
             m_tabIndex = GUILayout.Toolbar(m_tabIndex, tabLabels.ToArray());
@@ -297,6 +302,8 @@ namespace Unity.BuildReportInspector
                 else
                     OnMobileOutputFilesGUI();
             }
+            else if (tabLabels[m_tabIndex] == kToolbarTabDuplicateAssets)
+                OnDuplicateAssets();
             else if (tabLabels[m_tabIndex] == kToolbarTabStripping)
                 OnStrippingGUI();
 #if UNITY_2020_1_OR_NEWER
@@ -771,6 +778,79 @@ namespace Unity.BuildReportInspector
             // Source Asset is not always a real path, for example it could be a pseudo path
             // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
             return string.IsNullOrEmpty(path) ? "Generated" : path;
+        }
+
+        #endregion
+
+        #region DuplicateAssets
+        DuplicateAssets m_DuplicateAssetsAnalysis = null;
+        // Track which foldouts are open
+        Dictionary<string, bool> m_foldoutInDuplicateAssetsTab = new Dictionary<string, bool>();
+
+        void OnDuplicateAssets()
+        {
+            if (m_DuplicateAssetsAnalysis == null && GUILayout.Button("Calculate"))
+            {
+                m_DuplicateAssetsAnalysis = new DuplicateAssets(report);
+            }
+
+            if (m_DuplicateAssetsAnalysis != null)
+            {
+                if (m_DuplicateAssetsAnalysis.m_TotalSize == 0)
+                    return;
+
+                EditorGUILayout.LabelField("Total Content Analyzed: ", FormatSize(m_DuplicateAssetsAnalysis.m_TotalSize));
+
+                if (m_DuplicateAssetsAnalysis.m_AssetStats.Count == 0)
+                {
+                    EditorGUILayout.HelpBox("No duplicated Assets discovered.", MessageType.Info);
+                    return;
+                }
+
+                var percentage = (m_DuplicateAssetsAnalysis.m_DuplicateSize * 100) / m_DuplicateAssetsAnalysis.m_TotalSize;
+                var duplicateSize = FormatSize(m_DuplicateAssetsAnalysis.m_DuplicateSize);
+                duplicateSize += " (" + percentage + "%)";
+                EditorGUILayout.LabelField("Size from Repeated content: ", duplicateSize);
+
+                EditorGUILayout.HelpBox("Note: Sizes are pre-compression, and excludes some objects inside scenes", MessageType.Info);
+
+                float vPos = 0;
+                foreach (var sourceAssetStat in m_DuplicateAssetsAnalysis.m_AssetStats)
+                {
+                    var sourcePath = sourceAssetStat.Key;
+
+                    if (!m_assetsFoldout.ContainsKey(sourcePath))
+                        m_assetsFoldout[sourcePath] = false;
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(10);
+                    m_assetsFoldout[sourcePath] = EditorGUILayout.Foldout(m_assetsFoldout[sourcePath], sourcePath, DataFileStyle);
+                    GUILayout.Label(FormatSize(sourceAssetStat.Value.totalSize), SizeStyle);
+                    GUILayout.EndHorizontal();
+
+                    vPos += k_LineHeight;
+
+                    if (m_assetsFoldout[sourcePath])
+                        ShowAssetBundlesContaingAsset(sourceAssetStat.Value, ref vPos);
+                }
+            }
+        }
+
+        private static void ShowAssetBundlesContaingAsset(AssetInBundleStats stats, ref float vPos)
+        {
+            GUILayout.BeginVertical();
+            var odd = false;
+
+            foreach (var assetBundleStat in stats.assetBundleSizes)
+            {
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUILayout.Label(new GUIContent(assetBundleStat.Key, assetBundleStat.Key), GUI.skin.label, GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110));
+                GUILayout.Label(FormatSize(assetBundleStat.Value), SizeStyle);
+                GUILayout.EndHorizontal();
+                vPos += k_LineHeight;
+                odd = !odd;
+            }
+            GUILayout.EndVertical();
         }
 
         #endregion
