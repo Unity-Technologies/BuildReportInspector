@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.4.5-preview] - 2025-03-25
 
 ### Added
-- Test Project - add example showing asset duplication with a simple AssetBundle scenario
+- Add tab for showing statistics about duplicated Assets.  Only shown for AssetBundle builds.  Similar to Addressables Report.
+- Test Project - add example showing asset duplication, with a simple AssetBundle scenario
 - Add Incremental AssetBundle Comparison script to Utilities (not directly related to BuildReportInspector but its used in the Test Project).  This was original published in this [Unity Discussions thread](https://discussions.unity.com/t/about-incremental-build-and-asset-bundle-hashes).
 
 ### Changed
@@ -15,8 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Refactoring to improve readability and potential for reuse. 
 
 ### Fixed
+- Fix #41 - Make sure UI doesn't become unresponsive when there are huge numbers of Source Assets or Output files
 - Fix icon and a name string for internal/generated assets in the SourceAssets tab
-
 
 ## [0.4.4-preview] - 2025-03-18
 

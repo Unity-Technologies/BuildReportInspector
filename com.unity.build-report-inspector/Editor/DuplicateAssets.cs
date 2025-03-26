@@ -133,22 +133,7 @@ namespace Unity.BuildReportInspector
                     totalSizeFromAsset += assetBundleStat.Value;
                 }
                 m_DuplicateSize += ((ulong)(countItems - 1) * totalSizeFromAsset) / (ulong)countItems;
-
-                // TEMP
-                var values = bundleStats.Values.ToList();
-                for (int i = 1; i < countItems; i++)
-                {
-                    if (values[i] != values[i-1])
-                    {
-                        UnityEngine.Debug.Log("Found different size in different bundles " + assetStat.Key + " : " + string.Join(",", values));
-                        break;
-                    }
-                }
-                //
             }
-
-
-
         }
     }
 }
