@@ -1,25 +1,31 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using UnityEditor;
 using UnityEditor.Build.Reporting;
 
+// Utility that analyzes the PackedAsset information in the BuildReport to discover duplicated Assets.
+// This is only relevant for AssetBundles and is a common problem unless the assignment of Assets to Bundles has been fine tuned
+// to avoid excessive repeated content.
+// Player builds should always deduplicate any referenced content (as it lays out the .sharedAsset files).
+//
+// Note: The git repo for this package has a TestProject, which includes an simple scenario that intentionally creates duplicated content,
+// to demonstrating this feature.
 namespace Unity.BuildReportInspector
 {
     public class AssetInBundleStats
     {
-        public string sourceAssetPath;
+        // Total size from this Source Asset across all AssetBundles
         public ulong totalSize = 0;
-        public Dictionary<string, ulong> assetBundleSizes = new Dictionary<string, ulong>(); // AssetBundleName -> size
+
+        // AssetBundleName -> size contributed by this Source Asset
+        public Dictionary<string, ulong> assetBundleSizes = new Dictionary<string, ulong>();
     }
 
-    // Utility to analyze the PackedAsset information in the build BuildReport to discover duplicated Assets.
-    // This is only relevant for AssetBundles because Player builds should always deduplicate any referenced content (in the .sharedAsset files).
-    // Note: The TestProject, in the git repo for this package, includes an simple scenario for demonstrating this feature.
     public class DuplicateAssets
     {
         // Unity tracks MonoBehaviours and ScriptableObjects using small Monoscript objects.
-        // These can be numerous and distracting, unless you specifically want to investigate
-        // duplication for MonoScripts.
+        // These can be numerous and distracting so typically they should be ignored.
+        // (They are still reported in the Source Assets calculation)
         const bool kSkipMonoScripts = true;
 
         // Map from sourceAssetPath to statistics how this asset appears in AssetBundles
@@ -36,35 +42,13 @@ namespace Unity.BuildReportInspector
             CalculateStats(report);
         }
 
-        // Skip certain PackedAsset entries based on their source path
-        private bool ShouldSkipAsset(string sourcePath)
-        {
-            if (string.IsNullOrEmpty(sourcePath))
-                // Generated or internal object
-                return true;
-
-            if (kSkipMonoScripts && sourcePath.EndsWith(".cs"))
-                return true;
-
-            if (sourcePath == "AssetBundle Object")
-                // This is a generated object and different inside each AssetBundle, so never report it as duplicated
-                return true;
-
-            if (sourcePath == "Resources/unity_builtin_extra")
-                // This file contains multiple "built-in" shaders, and only the specific Shaders that are referenced will be
-                // copied into an AssetBundle.  There can be duplicated data in the build, but without examining down to the level
-                // of the individual Shader objects its not possible to estimate the duplication.
-                // (The ContentSummary and SourceAssets tab can be used to see the total size associated with this source)
-                return true;
-
-            return false;
-        }
-
         private void CalculateStats(BuildReport report)
         {
             m_AssetStats = new Dictionary<string, AssetInBundleStats>();
             var fileListHelper = new FileListHelper(report);
 
+            // Perform a single pass through all the PackedAsset information to build
+            // the specialized structures needed for this calculation
             foreach (var packedAsset in report.packedAssets)
             {
                 foreach (var packedAssetInfo in packedAsset.contents)
@@ -78,16 +62,12 @@ namespace Unity.BuildReportInspector
                         continue; // AssetBundleManifest
 
                     var sourcePath = packedAssetInfo.sourceAssetPath;
-
                     if (ShouldSkipAsset(sourcePath))
                         continue;
 
                     if (!m_AssetStats.TryGetValue(sourcePath, out var assetStats))
                     {
-                        assetStats = new AssetInBundleStats
-                        {
-                            sourceAssetPath = sourcePath
-                        };
+                        assetStats = new AssetInBundleStats();
                         m_AssetStats[sourcePath] = assetStats;
                     }
 
@@ -100,6 +80,8 @@ namespace Unity.BuildReportInspector
                 }
             }
 
+            // Post process the accumulated data
+
             // We only want entries that appear in more than one AssetBundle,
             // and want to show biggest assets first
             m_AssetStats = m_AssetStats
@@ -110,22 +92,63 @@ namespace Unity.BuildReportInspector
             CalculateDuplicatedSize();
         }
 
+        // Skip certain objects from the PackedAssets, based on their source path
+        private bool ShouldSkipAsset(string sourcePath)
+        {
+            if (string.IsNullOrEmpty(sourcePath))
+                // Generated or internal object
+                return true;
+
+            if (kSkipMonoScripts && sourcePath.EndsWith(".cs"))
+                return true;
+
+            if (sourcePath == "AssetBundle Object")
+                // This is a generated object and different inside each AssetBundle, so it is not accurate to report it as duplicated
+                return true;
+
+            if (sourcePath == "Resources/unity_builtin_extra")
+                // This file contains multiple "built-in" shaders, and only the specific Shaders that are referenced will be
+                // copied into an AssetBundle.  There can be duplicated data in the build, but without examining down to the level
+                // of the individual Shader objects its not possible to estimate the duplication.
+                // (The ContentSummary and SourceAssets tab can be used to see the total size associated with this source)
+                return true;
+
+            return false;
+        }
+
         private void CalculateDuplicatedSize()
         {
             m_DuplicateSize = 0;
             foreach (var assetStat in m_AssetStats)
             {
+                var bundleStats = assetStat.Value.assetBundleSizes;
+
                 // Typically the size should be the same inside each AssetBundle.
-                // But possibly for FBX and other types that have subassets the content could actually
+                // But theoretically for FBX and other types that have subassets the content could actually
                 // be different, so average things out
-                var countItems = assetStat.Value.assetBundleSizes.Count;
+                var countItems = bundleStats.Count;
                 ulong totalSizeFromAsset = 0;
-                foreach(var assetBundleStat in assetStat.Value.assetBundleSizes)
+                foreach(var assetBundleStat in bundleStats)
                 {
                     totalSizeFromAsset += assetBundleStat.Value;
                 }
                 m_DuplicateSize += ((ulong)(countItems - 1) * totalSizeFromAsset) / (ulong)countItems;
+
+                // TEMP
+                var values = bundleStats.Values.ToList();
+                for (int i = 1; i < countItems; i++)
+                {
+                    if (values[i] != values[i-1])
+                    {
+                        UnityEngine.Debug.Log("Found different size in different bundles " + assetStat.Key + " : " + string.Join(",", values));
+                        break;
+                    }
+                }
+                //
             }
+
+
+
         }
     }
 }
