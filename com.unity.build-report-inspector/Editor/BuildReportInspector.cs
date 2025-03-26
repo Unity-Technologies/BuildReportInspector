@@ -21,7 +21,13 @@ namespace Unity.BuildReportInspector
         static readonly string k_BuildReportDir = "Assets/BuildReports";
 
         static readonly string k_LastBuildReportFileName = "Library/LastBuild.buildreport";
-        static int k_MaxSourceAssetEntries = 10000; // To avoid UI freezing for truly large builds
+
+        // To avoid UI freezing for truly large builds there are some limits imposed in the UI.
+        // These can be pushed higher if needed, but the UI will become less responsive.
+        // For truly large data consider processing it in your own script or exporting to external tools.
+        // Eventually these values could be exposed in a edit box, or in Preferences
+        static int k_MaxSourceAssetEntries = 10000;
+        static int k_MaxFilesListed = 2000;
 
         [MenuItem("Window/Open Last Build Report", true)]
         public static bool ValidateOpenLastBuild()
@@ -166,9 +172,9 @@ namespace Unity.BuildReportInspector
         // Potentially useful sorting to add would be source asset filepath and source asset file extension
         private enum SourceAssetsDisplayMode
         {
+            ImporterType,  // Show by default because it will be a reasonable sized list even for very large builds
             Size,
-            OutputDataFiles,
-            ImporterType
+            OutputDataFiles
         };
 
         private enum OutputFilesDisplayMode
@@ -184,7 +190,7 @@ namespace Unity.BuildReportInspector
             UncompressedSize
         }
 
-        ToolbarTabs m_mode;
+        int m_tabIndex;
         SourceAssetsDisplayMode m_sourceDispMode;
         OutputFilesDisplayMode m_outputDispMode;
         MobileOutputDisplayMode m_mobileOutputDispMode;
@@ -209,37 +215,13 @@ namespace Unity.BuildReportInspector
 
         #region MainUI
 
-        private enum ToolbarTabs
-        {
-            BuildSteps,
-            ContentSummary,
-            SourceAssets,
-            OutputFiles,
-            Stripping,
-#if UNITY_2020_1_OR_NEWER
-            ScenesUsingAssets,
-#endif
-        };
-
-        readonly string[] ToolbarTabStrings = {
-            "BuildSteps",
-            "ContentSummary",
-            "SourceAssets", // Could also be called "Content Details"
-            "OutputFiles",
-            "Stripping",
-    #if UNITY_2020_1_OR_NEWER
-            "ScenesUsingAssets",
-    #endif
-        };
-
-        // The Stripping and ScenesUsingAssets don't apply to AssetBundle builds.
-        // Note: this requires that player-only tabs are always at the end of the list.
-        readonly string[] ToolbarTabStringsAssetBundle = {
-            "BuildSteps",
-            "ContentSummary",
-            "SourceAssets",
-            "OutputFiles"
-        };
+        const string kToolbarTabContentBuildSteps = "BuildSteps";
+        const string kToolbarTabContentSummary = "ContentSummary";
+        const string kToolbarTabSourceAssets = "SourceAssets";  // Could also be called "Content Details"
+        const string kToolbarTabOutputFiles = "OutputFiles";
+        const string kToolbarTabStripping = "Stripping";
+        const string kToolbarTabScenesUsingAssets = "ScenesUsingAssets";
+        const string kToolbarTabDuplicateAssets = "DuplicateAssets";
 
         /// <summary>
         /// Custom inspector implementation for UnityEditor.Build.Reporting.BuildReport objects
@@ -265,17 +247,33 @@ namespace Unity.BuildReportInspector
             // Show Mobile appendix data below the build summary
             OnMobileAppendixGUI();
 
-            if (BuildType == "AssetBundle")
-                // Hide a few tabs which are never populated for AssetBundles
-                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStringsAssetBundle);
-            else
-                m_mode = (ToolbarTabs)GUILayout.Toolbar((int)m_mode, ToolbarTabStrings);
+            var tabLabels = new List<string>() {
+                kToolbarTabContentBuildSteps,
+                kToolbarTabContentSummary,
+                kToolbarTabSourceAssets,
+                kToolbarTabOutputFiles
+            };
 
-            if (m_mode == ToolbarTabs.SourceAssets)
+            if (BuildType == "Player")
+            {
+                // The Stripping and ScenesUsingAssets don't apply to AssetBundle builds.
+#if UNITY_2020_1_OR_NEWER
+                tabLabels.Add(kToolbarTabStripping);
+#endif
+                tabLabels.Add(kToolbarTabScenesUsingAssets);
+            }
+            else
+            {
+                tabLabels.Add(kToolbarTabDuplicateAssets);
+            }
+
+            m_tabIndex = GUILayout.Toolbar(m_tabIndex, tabLabels.ToArray());
+
+            if (tabLabels[m_tabIndex] == kToolbarTabSourceAssets)
             {
                 m_sourceDispMode = (SourceAssetsDisplayMode)EditorGUILayout.EnumPopup("Sort by:", m_sourceDispMode);
             }
-            else if (m_mode == ToolbarTabs.OutputFiles)
+            else if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles)
             {
                 if (mobileAppendix != null)
                 {
@@ -287,7 +285,7 @@ namespace Unity.BuildReportInspector
                 }
             }
 
-            if (m_mode == ToolbarTabs.OutputFiles && mobileAppendix != null)
+            if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles && mobileAppendix != null)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("File"), GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 260));
@@ -296,34 +294,29 @@ namespace Unity.BuildReportInspector
                 GUILayout.EndHorizontal();
             }
 
-            switch (m_mode)
+            if (tabLabels[m_tabIndex] == kToolbarTabContentBuildSteps)
+                OnBuildStepGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabContentSummary)
+                OnContentSummaryGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabSourceAssets)
+                OnSourceAssetsGUI();
+            else if (tabLabels[m_tabIndex] == kToolbarTabOutputFiles)
             {
-                case ToolbarTabs.BuildSteps:
-                    OnBuildStepGUI();
-                    break;
-                case ToolbarTabs.ContentSummary:
-                    OnContentSummaryGUI();
-                    break;
-                case ToolbarTabs.SourceAssets:
-                    OnSourceAssetsGUI();
-                    break;
-                case ToolbarTabs.OutputFiles:
-                    if (mobileAppendix == null)
-                        OnOutputFilesGUI();
-                    else
-                        OnMobileOutputFilesGUI();
-                    break;
-                case ToolbarTabs.Stripping:
-                    OnStrippingGUI();
-                    break;
-#if UNITY_2020_1_OR_NEWER
-                case ToolbarTabs.ScenesUsingAssets:
-                    OnScenesUsingAssetsGUI();
-                    break;
-#endif
-                default:
-                    throw new ArgumentOutOfRangeException();
+                if (mobileAppendix == null)
+                    OnOutputFilesGUI();
+                else
+                    OnMobileOutputFilesGUI();
             }
+            else if (tabLabels[m_tabIndex] == kToolbarTabDuplicateAssets)
+                OnDuplicateAssets();
+            else if (tabLabels[m_tabIndex] == kToolbarTabStripping)
+                OnStrippingGUI();
+#if UNITY_2020_1_OR_NEWER
+            else if (tabLabels[m_tabIndex] == kToolbarTabScenesUsingAssets)
+                OnScenesUsingAssetsGUI();
+#endif
+            else
+                throw new ArgumentOutOfRangeException();
         }
 
         private void OnMobileAppendixGUI()
@@ -548,7 +541,7 @@ namespace Unity.BuildReportInspector
 
                 EditorGUILayout.LabelField("Serialized File Size: ", FormatSize(stats.totalSerializedFileSize));
                 EditorGUILayout.LabelField("Serialized File Headers: ", FormatSize(stats.totalHeaderSize));
-                EditorGUILayout.LabelField("Resource Data Size: ", FormatSize(stats.totalResourceSize));
+                EditorGUILayout.LabelField("Resource Data Size: ", FormatSize(stats.totalStreamingResourceSize));
                 EditorGUILayout.LabelField("Serialized File Count: ", stats.serializedFileCount.ToString());
                 EditorGUILayout.LabelField("Resource File Count: ", stats.resourceFileCount.ToString());
                 EditorGUILayout.LabelField("Object Count: ", stats.objectCount.ToString());
@@ -598,13 +591,13 @@ namespace Unity.BuildReportInspector
             if (m_FoldOutState_AssetList)
             {
                 // Note: some projects may have hundreds of thousands of assets.
-                // The list is sorted by size (decreasing).  It might make sense to limit
-                // to the top "N" assets, with a "show all" button or way to control "N".
+                // The list is sorted by size (decreasing).
 
                 GUILayout.BeginVertical();
                 var odd = false;
                 GUILayout.Space(10);
 
+                int cntOutputFilesShown = 0;
                 foreach (var info in assetStats)
                 {
                     GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
@@ -615,6 +608,13 @@ namespace Unity.BuildReportInspector
 
                     GUILayout.EndHorizontal();
                     odd = !odd;
+
+                    cntOutputFilesShown++;
+                    if (cntOutputFilesShown > k_MaxFilesListed)
+                    {
+                        EditorGUILayout.HelpBox("Too many files to display.  Showing only the first " + k_MaxFilesListed + " out of " + assetStats.Length, MessageType.Info);
+                        break;
+                    }
                 }
                 GUILayout.EndVertical();
             }
@@ -691,11 +691,14 @@ namespace Unity.BuildReportInspector
             {
                 case SourceAssetsDisplayMode.Size:
                     // List all content by source and size
-                    // There will be multiple items per source if it has objects of different types inside it
+                    // There will be multiple items per source if it has objects of different types inside it.
                     ShowAssets(m_contentAnalysis.m_assets, ref vPos);
                     break;
                 case SourceAssetsDisplayMode.OutputDataFiles:
                     // Group content by the output file (with size total for all objects of a particular type within each source)
+                    // Note: the current implementation is not efficient for large datasets if the foldout gets opened.
+                    // That is because populating entries inside the foldout does a full scan of all entries.  Because
+                    // everything is closed by default this is probably ok for the moment.
                     foreach (var outputFile in m_contentAnalysis.m_outputFiles)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))
@@ -715,6 +718,7 @@ namespace Unity.BuildReportInspector
                     break;
                 case SourceAssetsDisplayMode.ImporterType:
                     // Group content by type (with total size of objects of that type listed from each source)
+                    // This follows the exact same pattern as the OutputDataFiles case
                     foreach (var outputFile in m_contentAnalysis.m_assetTypes)
                     {
                         if (!m_assetsFoldout.ContainsKey(outputFile.Key))
@@ -771,19 +775,111 @@ namespace Unity.BuildReportInspector
 
         private static string GetDisplayNameForFile(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                return "Unknown";
-
+            string displayName = null;
             try
             {
-                return Path.GetFileName(path);
+                displayName = Path.GetFileName(path)?.Trim();
             }
             catch (Exception)
             {
-                // revert to path,
-                // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
-                return path;
             }
+
+            if (!string.IsNullOrEmpty(displayName))
+                return displayName;
+
+            // Source Asset is not always a real path, for example it could be a pseudo path
+            // e.g. for pseudo paths like 'Built-in Texture2D: sactx-0-256x128-DXT5|BC3-ui-sprite-atlas-fff07956'
+            return string.IsNullOrEmpty(path) ? "Generated" : path;
+        }
+
+        #endregion
+
+        #region DuplicateAssets
+        // Tab for showing duplicates inside AssetBundles
+
+        DuplicateAssets m_DuplicateAssetsAnalysis = null;
+        // Track which foldouts are open
+        Dictionary<string, bool> m_foldoutInDuplicateAssetsTab = new Dictionary<string, bool>();
+
+        void OnDuplicateAssets()
+        {
+            if (m_DuplicateAssetsAnalysis == null && GUILayout.Button("Calculate"))
+            {
+                m_DuplicateAssetsAnalysis = new DuplicateAssets(report);
+            }
+
+            if (m_DuplicateAssetsAnalysis != null)
+            {
+                if (m_DuplicateAssetsAnalysis.m_TotalSize == 0)
+                    return;
+
+                EditorGUILayout.LabelField("Total Content Analyzed: ", FormatSize(m_DuplicateAssetsAnalysis.m_TotalSize));
+
+                if (m_DuplicateAssetsAnalysis.m_AssetStats.Count == 0)
+                {
+                    EditorGUILayout.HelpBox("No duplicated Assets discovered.", MessageType.Info);
+                    return;
+                }
+
+                var percentage = (m_DuplicateAssetsAnalysis.m_DuplicateSize * 100) / m_DuplicateAssetsAnalysis.m_TotalSize;
+                var duplicateSize = FormatSize(m_DuplicateAssetsAnalysis.m_DuplicateSize);
+                duplicateSize += " (" + percentage + "%)";
+                EditorGUILayout.LabelField("Size from Repeated content: ", duplicateSize);
+
+                EditorGUILayout.HelpBox("Note: Sizes are pre-compression, and excludes some objects inside scenes", MessageType.Info);
+
+                float vPos = 0;
+
+                int cntAssetsShown = 0;
+
+                // Top level is a list of all the Source Assets that appear in more than one AssetBundle
+                foreach (var sourceAssetStat in m_DuplicateAssetsAnalysis.m_AssetStats)
+                {
+                    var sourcePath = sourceAssetStat.Key;
+
+                    if (!m_assetsFoldout.ContainsKey(sourcePath))
+                        m_assetsFoldout[sourcePath] = false;
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(10);
+                    m_assetsFoldout[sourcePath] = EditorGUILayout.Foldout(m_assetsFoldout[sourcePath], sourcePath, DataFileStyle);
+                    GUILayout.Label(FormatSize(sourceAssetStat.Value.totalSize), SizeStyle);
+                    GUILayout.EndHorizontal();
+
+                    vPos += k_LineHeight;
+
+                    if (m_assetsFoldout[sourcePath])
+                        // For expanded items we also list the AssetBundles that contain this Source Asset
+                        ShowAssetBundlesContaingAsset(sourceAssetStat.Value, ref vPos);
+
+                    cntAssetsShown++;
+                    if (cntAssetsShown > k_MaxFilesListed)
+                    {
+                        EditorGUILayout.HelpBox("Too many assets to display.  Showing the first " + k_MaxFilesListed + " only out of " + m_DuplicateAssetsAnalysis.m_AssetStats.Count, MessageType.Info);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private static void ShowAssetBundlesContaingAsset(AssetInBundleStats stats, ref float vPos)
+        {
+            GUILayout.BeginVertical();
+            var odd = false;
+
+            foreach (var assetBundleStat in stats.assetBundleSizes)
+            {
+                GUILayout.BeginHorizontal(odd ? OddStyle : EvenStyle);
+                GUILayout.Label(
+                    new GUIContent(assetBundleStat.Key, assetBundleStat.Key),
+                    GUI.skin.label,
+                    GUILayout.MaxWidth(EditorGUIUtility.currentViewWidth - 110));
+                GUILayout.Label(FormatSize(assetBundleStat.Value), SizeStyle);
+                GUILayout.EndHorizontal();
+                vPos += k_LineHeight;
+                odd = !odd;
+            }
+            GUILayout.EndVertical();
         }
 
         #endregion
@@ -792,52 +888,89 @@ namespace Unity.BuildReportInspector
 
         Dictionary<string, bool> m_outputFilesFoldout = new Dictionary<string, bool>();
 
-        private void OnOutputFilesGUI()
+        private class CachedFileInfo
         {
+            public BuildFile[] files;
+            public string longestCommonRoot;
+            public OutputFilesDisplayMode currentSorting;
+        };
+        CachedFileInfo m_cachedFileInfo = null;
+
+        private void InitializeCachedFileInfo()
+        {
+            // For very large builds retrieving the file list can be expensive, so cache the list in C#
+            m_cachedFileInfo = new CachedFileInfo();
 #if UNITY_2022_1_OR_NEWER
-            var files = report.GetFiles();
+            m_cachedFileInfo.files = report.GetFiles();
 #else
-            var files = report.files;
+                cachedFileInfo.files = report.files;
 #endif // UNITY_2022_1_OR_NEWER
 
-            if (files.Length == 0)
-                return;
-
-            var longestCommonRoot = files[0].path;
+            m_cachedFileInfo.longestCommonRoot = m_cachedFileInfo.files[0].path;
             var tempRoot = Path.GetFullPath("Temp");
-            foreach (var file in files)
+            foreach (var file in m_cachedFileInfo.files)
             {
                 if (file.path.StartsWith(tempRoot))
                     continue;
-                for (var i = 0; i < longestCommonRoot.Length && i < file.path.Length; i++)
+                for (var i = 0; i < m_cachedFileInfo.longestCommonRoot.Length && i < file.path.Length; i++)
                 {
-                    if (longestCommonRoot[i] == file.path[i])
+                    if (m_cachedFileInfo.longestCommonRoot[i] == file.path[i])
                         continue;
-                    longestCommonRoot = longestCommonRoot.Substring(0, i);
+                    m_cachedFileInfo.longestCommonRoot = m_cachedFileInfo.longestCommonRoot.Substring(0, i);
                     break;
                 }
             }
+
+            m_cachedFileInfo.currentSorting = OutputFilesDisplayMode.FilePath;
+        }
+
+        private void SortFileList(CachedFileInfo fileInfo, OutputFilesDisplayMode newSorting)
+        {
+            switch (newSorting)
+            {
+                case OutputFilesDisplayMode.FilePath:
+                    Array.Sort(fileInfo.files, (fileA, fileB) => { return fileB.path.CompareTo(fileA.path); });
+                    break;
+                case OutputFilesDisplayMode.Size:
+                    Array.Sort(fileInfo.files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
+                    break;
+                case OutputFilesDisplayMode.Role:
+                    Array.Sort(fileInfo.files, (fileA, fileB) =>
+                    {
+                        int comparison = string.Compare(fileA.role, fileB.role, StringComparison.OrdinalIgnoreCase);
+                        return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison;
+                    });
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            fileInfo.currentSorting = newSorting;
+        }
+
+        private void OnOutputFilesGUI()
+        {
+            if (m_cachedFileInfo == null)
+                InitializeCachedFileInfo();
+
+            var longestCommonRoot = m_cachedFileInfo.longestCommonRoot;
+            var files = m_cachedFileInfo.files;
+            if (files.Length == 0)
+                return;
+
+            if (m_outputDispMode != m_cachedFileInfo.currentSorting)
+                SortFileList(m_cachedFileInfo, m_outputDispMode);
 
             float vPos = 0;
             switch (m_outputDispMode)
             {
                 case OutputFilesDisplayMode.FilePath:
-                    Array.Sort(files, (fileA, fileB) => { return fileB.path.CompareTo(fileA.path); });
                     ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);
                     break;
                 case OutputFilesDisplayMode.Size:
-                    Array.Sort(files, (fileA, fileB) => { return fileB.size.CompareTo(fileA.size); });
                     ShowOutputFiles(files, ref vPos, longestCommonRoot.Length);
                     break;
                 case OutputFilesDisplayMode.Role:
-                    Array.Sort(files, (fileA, fileB) =>
-                    {
-                        int comparison = string.Compare(fileA.role, fileB.role, StringComparison.OrdinalIgnoreCase);
-                        return comparison == 0 ? fileB.size.CompareTo(fileA.size) : comparison;
-                    });
-
                     Dictionary<string, ulong> sizePerRole = new Dictionary<string, ulong>();
-
                     foreach (BuildFile file in files)
                     {
                         if (sizePerRole.ContainsKey(file.role))
@@ -873,7 +1006,6 @@ namespace Unity.BuildReportInspector
                             ShowOutputFiles(files, ref vPos, longestCommonRoot.Length, pair.Key);
                         }
                     }
-
                     break;
             }
 
@@ -927,6 +1059,7 @@ namespace Unity.BuildReportInspector
             GUILayout.BeginVertical();
             var odd = false;
 
+            int cntOutputFilesShown = 0;
             foreach (BuildFile file in files)
             {
                 if (roleFilter != null && string.Compare(file.role, roleFilter, StringComparison.OrdinalIgnoreCase) != 0)
@@ -948,6 +1081,13 @@ namespace Unity.BuildReportInspector
 
                 vPos += k_LineHeight;
                 odd = !odd;
+
+                cntOutputFilesShown++;
+                if (cntOutputFilesShown > k_MaxFilesListed)
+                {
+                    EditorGUILayout.HelpBox("Too many files to display.  Showing only the first " + k_MaxFilesListed + " out of " + files.Length, MessageType.Info);
+                    break;
+                }
             }
 
             GUILayout.EndVertical();

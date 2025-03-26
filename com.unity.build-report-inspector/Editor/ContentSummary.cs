@@ -22,7 +22,7 @@ namespace Unity.BuildReportInspector
         public int objectCount = 0;
 
         // Number of resources
-        public int resourceCount = 0;
+        public int streamingResourceCount = 0;
     }
 
     // Information about all objects from a specific asset
@@ -41,7 +41,7 @@ namespace Unity.BuildReportInspector
         public int objectCount = 0;
 
         // Number of resources associated with the asset
-        public int resourceCount = 0;
+        public int streamingResourceCount = 0;
     }
 
     // Summary of the size of the build output
@@ -67,7 +67,7 @@ namespace Unity.BuildReportInspector
         public ulong totalHeaderSize = 0;
 
         // .resS, .resource files. Actual size can be a bit larger because of padding
-        public ulong totalResourceSize = 0;
+        public ulong totalStreamingResourceSize = 0;
 
         // Sizes include Resource file content if it is owned by the object
         public Dictionary<Type, TypeStats> statsPerType = new Dictionary<Type, TypeStats>();
@@ -94,6 +94,13 @@ namespace Unity.BuildReportInspector
             CalculateStats(report);
         }
 
+        private bool isStreamingResourceFile(string path)
+        {
+            // These extensions contain Texture, Mesh, Audio or Video data
+            // They are assigned the BuildReport role "StreamingResourceFile"
+            return path.EndsWith(".resS") || path.EndsWith(".resource");
+        }
+
         private void CalculateStats(BuildReport report)
         {
             PackedAssets[] packedAssets = report.packedAssets;
@@ -101,12 +108,12 @@ namespace Unity.BuildReportInspector
             foreach(var packedAsset in packedAssets)
             {
                 // Resource files contain blobs of data referenced from objects in the serialized files (e.g. audio/video/texture/mesh)
-                bool isResourceFile = packedAsset.shortPath.EndsWith(".resS") || packedAsset.shortPath.EndsWith(".resource");
+                bool isStreamingResourceFile = this.isStreamingResourceFile(packedAsset.shortPath);
 
-                if (isResourceFile)
+                if (isStreamingResourceFile)
                 {
                     m_Stats.resourceFileCount++;
-                    m_Stats.totalResourceSize += packedAsset.overhead; // Currently 0 because there is no header for these files
+                    m_Stats.totalStreamingResourceSize += packedAsset.overhead; // Currently 0 because there is no header for these files
                 }
                 else
                 {
@@ -119,9 +126,9 @@ namespace Unity.BuildReportInspector
                 var packedAssetInfoArray = packedAsset.contents;
                 foreach(var packedAssetInfo in packedAssetInfoArray)
                 {
-                    if (isResourceFile)
+                    if (isStreamingResourceFile)
                     {
-                        m_Stats.totalResourceSize += packedAssetInfo.packedSize;
+                        m_Stats.totalStreamingResourceSize += packedAssetInfo.packedSize;
                     }
                     else
                     {
@@ -132,13 +139,13 @@ namespace Unity.BuildReportInspector
                     if (m_Stats.statsPerType.ContainsKey(packedAssetInfo.type))
                     {
                         var stats = m_Stats.statsPerType[packedAssetInfo.type];
-                        UpdateTypeStats(stats, packedAssetInfo, isResourceFile);
+                        UpdateTypeStats(stats, packedAssetInfo, isStreamingResourceFile);
                     }
                     else
                     {
                         var stats = new TypeStats();
                         stats.type = packedAssetInfo.type;
-                        UpdateTypeStats(stats, packedAssetInfo, isResourceFile);
+                        UpdateTypeStats(stats, packedAssetInfo, isStreamingResourceFile);
                         m_Stats.statsPerType.Add(packedAssetInfo.type, stats);
                     }
 
@@ -149,13 +156,13 @@ namespace Unity.BuildReportInspector
                     else if (m_Stats.assetStats.ContainsKey(packedAssetInfo.sourceAssetGUID))
                     {
                         var stats = m_Stats.assetStats[packedAssetInfo.sourceAssetGUID];
-                        UpdateAssetStats(stats, packedAssetInfo, isResourceFile);
+                        UpdateAssetStats(stats, packedAssetInfo, isStreamingResourceFile);
                     }
                     else
                     {
                         var stats = new AssetStats();
                         stats.sourceAssetPath = packedAssetInfo.sourceAssetPath;
-                        UpdateAssetStats(stats, packedAssetInfo, isResourceFile);
+                        UpdateAssetStats(stats, packedAssetInfo, isStreamingResourceFile);
                         m_Stats.assetStats.Add(packedAssetInfo.sourceAssetGUID, stats);
                     }
                 }
@@ -165,20 +172,20 @@ namespace Unity.BuildReportInspector
             m_Stats.sortedAssetStats = m_Stats.assetStats.Values.OrderByDescending(stats => stats.size).ToArray();
         }
 
-        private void UpdateTypeStats(TypeStats stats, PackedAssetInfo packedInfo, bool isResourceFile)
+        private void UpdateTypeStats(TypeStats stats, PackedAssetInfo packedInfo, bool isStreamingResourceFile)
         {
             stats.size += packedInfo.packedSize;
-            if (isResourceFile)
-                stats.resourceCount += 1;
+            if (isStreamingResourceFile)
+                stats.streamingResourceCount += 1;
             else
                 stats.objectCount += 1;
         }
 
-        private void UpdateAssetStats(AssetStats stats, PackedAssetInfo packedInfo, bool isResourceFile)
+        private void UpdateAssetStats(AssetStats stats, PackedAssetInfo packedInfo, bool isStreamingResourceFile)
         {
             stats.size += packedInfo.packedSize;
-            if (isResourceFile)
-                stats.resourceCount += 1;
+            if (isStreamingResourceFile)
+                stats.streamingResourceCount += 1;
             else
                 stats.objectCount += 1;
         }
