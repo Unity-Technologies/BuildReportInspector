@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
+using System.Text.RegularExpressions;
 
 namespace Unity.BuildReportInspector
 {
@@ -101,6 +102,10 @@ namespace Unity.BuildReportInspector
                         if (string.IsNullOrEmpty(path))
                             path = "Generated"; // Build output not associated with a source asset
 
+                        string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+                        Regex regex = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
+                        string sanitizedPath = regex.Replace(path, "");
+
                         assetTypesInFile[key] = new ContentEntry
                         {
                             size = entry.packedSize,
@@ -109,7 +114,7 @@ namespace Unity.BuildReportInspector
                             internalArchivePath = internalArchivePath,
                             type = type,
                             path = path,
-                            extension = Path.GetExtension(path),
+                            extension = Path.GetExtension(sanitizedPath),
                             objectCount = 1
                         };
                     }
