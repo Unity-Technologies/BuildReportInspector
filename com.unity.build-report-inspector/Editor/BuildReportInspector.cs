@@ -903,7 +903,7 @@ namespace Unity.BuildReportInspector
 #if UNITY_2022_1_OR_NEWER
             m_cachedFileInfo.files = report.GetFiles();
 #else
-                cachedFileInfo.files = report.files;
+            m_cachedFileInfo.files = report.files;
 #endif // UNITY_2022_1_OR_NEWER
 
             m_cachedFileInfo.longestCommonRoot = m_cachedFileInfo.files[0].path;

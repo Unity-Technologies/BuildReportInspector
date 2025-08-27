@@ -58,7 +58,11 @@ namespace Unity.BuildReportInspector
                 return;
 #endif
 
+#if UNITY_2022_1_OR_NEWER
             var files = report.GetFiles();
+#else
+            var files = report.files;
+#endif // UNITY_2022_1_OR_NEWER
 
             // Track archive paths and their base filenames for AssetBundle or manifest files
             var archivePathToFileName = new Dictionary<string, string>();
