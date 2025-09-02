@@ -101,6 +101,18 @@ namespace Unity.BuildReportInspector
                         if (string.IsNullOrEmpty(path))
                             path = "Generated"; // Build output not associated with a source asset
 
+                        var extension = "";
+                        try
+                        {
+                            extension = Path.GetExtension(path);
+                        }
+                        catch (Exception)
+                        {
+                            // Some internal objects have invalid paths
+                            // `Built-in Texture2D: sactx-0-1024x512-DXT5|BC3-_mainmenu-936da5f0`
+                            // so silently treat it as empty extension
+                        }
+
                         assetTypesInFile[key] = new ContentEntry
                         {
                             size = entry.packedSize,
@@ -109,7 +121,7 @@ namespace Unity.BuildReportInspector
                             internalArchivePath = internalArchivePath,
                             type = type,
                             path = path,
-                            extension = Path.GetExtension(path),
+                            extension = extension,
                             objectCount = 1
                         };
                     }
