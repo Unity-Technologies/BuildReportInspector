@@ -12,7 +12,7 @@ Note: The Addressables and Scriptable Build Pipeline packages do not generate a 
 
 ## Alternatives to using this package
 
-* The [Project Auditor package](https://docs.unity3d.com/Packages/com.unity.project-auditor@1.0/manual/build-view-reference.html) package supports viewing the Build Report for the most recent Player Build.
+* The [Project Auditor package](https://docs.unity3d.com/Packages/com.unity.project-auditor@1.0/manual/build-view-reference.html) supports viewing the Build Report for the most recent Player Build.
 
 * [UnityDataTools](https://github.com/Unity-Technologies/UnityDataTools/blob/main/Documentation/buildreport.md) supports importing a BuildReport into an sqlite database. This is recommended for looking at the information from very large builds.
 
