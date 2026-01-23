@@ -34,9 +34,12 @@ The CSV export and example usage described above are just an illustration of som
 
 If the SourceAsset csv data is not suitable for your needs, then the BuildReport API and other parts of the Unity API can be used to extract other data.  
 
-The SourceAsset data could potentially be combined and cross referenced with data output by the [Analyse feature of UnityDataTools](https://github.com/Unity-Technologies/UnityDataTools/blob/main/UnityDataTool/README.md#analyzeanalyse).  You might also mix in information about the dependencies between the Source Assets.  Or use the [dependency](https://docs.unity3d.com/Documentation/ScriptReference/AssetBundleManifest.GetAllDependencies.html) relationship of AssetBundles.  In the case of AssetBundles, the Source Asset data could also help find data that is duplicated in more than one AssetBundle.
+You might also mix in information about the dependencies between the Source Assets.  Or use the [dependency](https://docs.unity3d.com/Documentation/ScriptReference/AssetBundleManifest.GetAllDependencies.html) relationship of AssetBundles.
 
-Another possible direction would be to import the SourceAsset data from multiple builds into the same database, and then run queries to compare the builds and pinpoint the differences.
+### Alternatives
 
-Tip: For even faster export speed it might work well to write a Unity script that imports the data directly into a database, instead of using an intermediate CSV file.
+The csv export feature described above available remains useful as a way to bring data into spreadsheet products, which offer analysis and visualization tools that can handle quite large datasets.
 
+However for very large data (millions of objects or larger) then databases can offer much better performance.
+
+[UnityDataTools](https://github.com/Unity-Technologies/UnityDataTools/blob/main/Documentation/buildreport.md) now supports importing BuildReports directly into an sqlite database.  UnityDataTools is more technical than the BuildReportInspector, but this approach bypasses the need to use the Unity Editor and BuildReportInspector.
