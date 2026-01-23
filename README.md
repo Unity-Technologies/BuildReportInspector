@@ -16,7 +16,7 @@ Unity generates a BuildReport file for Player builds and AssetBundles. This pack
 ## Key Features
 
 - **Multiple views** - [Build Steps](com.unity.build-report-inspector/Documentation~/tab-build-steps.md), [Content Summary](com.unity.build-report-inspector/Documentation~/tab-content-summary.md), [Source Assets](com.unity.build-report-inspector/Documentation~/tab-source-assets.md), [Output Files](com.unity.build-report-inspector/Documentation~/tab-output-files.md), and more
-- **Mobile support** - [Additional insights](com.unity.build-report-inspector/Documentation~/com.unity.build-report-inspector.md#mobile) for Android and iOS builds
+- **Mobile support** - [Additional insights](com.unity.build-report-inspector/Documentation~/mobile.md) for Android and iOS builds
 - **CSV export** - [Export data](com.unity.build-report-inspector/Documentation~/exporting-and-analysis.md) for further analysis in external tools
 - **AssetBundle analysis** - [Detect and resolve](com.unity.build-report-inspector/Documentation~/tab-duplicated-assets.md) asset duplication issues
 - **Collect history of past builds** - Menu shortcut that copies the most recent BuildReport into your project
