@@ -27,6 +27,8 @@ This package is available as a preview and provided as-is. It serves as a demons
 
 ## Getting Started
 
-See the [Build Report Inspector documentation](com.unity.build-report-inspector/Documentation~/com.unity.build-report-inspector.md) for installation instructions and detailed usage information.
+**Important:** The version on GitHub is more up to date than version 0.3 available through Unity Package Manager. We recommend installing directly from this repository to get the latest features and improvements.
+
+See the [installation instructions](com.unity.build-report-inspector/Documentation~/com.unity.build-report-inspector.md#Installation) for step-by-step guidance on adding this package to your project.
 
 **Quick start:** After installation, use `Window > Open Last Build Report` to view your most recent build.
