@@ -17,6 +17,8 @@ namespace Unity.BuildReportInspector.Mobile
             Aab
         }
 
+        private static string m_ApkAnalyzerPath;
+
         private static string AndroidToolRoot
         {
             get
@@ -57,6 +59,28 @@ namespace Unity.BuildReportInspector.Mobile
                 return GuessToolPath("AndroidSdkRoot", "SDK");
 #endif
             }
+        }
+
+        private static string ApkAnalyzerPath
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(m_ApkAnalyzerPath))
+                    return m_ApkAnalyzerPath;
+                var fileName = "apkanalyzer";
+                if (Application.platform == RuntimePlatform.WindowsEditor)
+                    fileName += ".bat";
+                var files = Directory.GetFiles(Utilities.Combine(SdkPath, "cmdline-tools"), fileName, SearchOption.AllDirectories);
+                if (files.Length > 0)
+                {
+                    m_ApkAnalyzerPath = files[0];
+                    return m_ApkAnalyzerPath;
+                }
+
+                m_ApkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                return m_ApkAnalyzerPath;
+            }
+
         }
 
         private static string GuessToolPath(string nameKey, string toolName)
@@ -226,13 +250,8 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException("Could not retrieve Android SDK location. Please set it up in Editor Preferences.");
                 }
-                apkAnalyzerPath = Utilities.Combine(SdkPath, "cmdline-tools", "6.0", "bin", "apkanalyzer");
-                if (!File.Exists(apkAnalyzerPath) && !File.Exists(apkAnalyzerPath + ".bat"))
-                    apkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = ApkAnalyzerPath;
             }
-#if UNITY_EDITOR_WIN
-            apkAnalyzerPath += ".bat";
-#endif // UNITY_EDITOR_WIN
 
             string apkAnalyzerOutput;
             int exitCode;
