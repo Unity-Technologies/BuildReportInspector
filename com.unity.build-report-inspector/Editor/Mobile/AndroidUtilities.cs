@@ -77,7 +77,7 @@ namespace Unity.BuildReportInspector.Mobile
                     return m_ApkAnalyzerPath;
                 }
 
-                m_ApkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", "apkanalyzer");
+                m_ApkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", fileName);
                 return m_ApkAnalyzerPath;
             }
 
