@@ -61,31 +61,34 @@ namespace Unity.BuildReportInspector.Mobile
             }
         }
 
+        private static string GetApkAnalyzerPathFromSdk(string sdkPath)
+        {
+            var fileName = "apkanalyzer";
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+                fileName += ".bat";
+
+            var cmdLineToolsDirectory = Utilities.Combine(sdkPath, "cmdline-tools");
+            if (Directory.Exists(cmdLineToolsDirectory))
+            {
+                var files = Directory.GetFiles(cmdLineToolsDirectory, fileName, SearchOption.AllDirectories);
+                if (files.Length > 0)
+                {
+                    return files[0];
+                }
+            }
+
+            return Utilities.Combine(sdkPath, "tools", "bin", fileName);
+        }
+
         private static string ApkAnalyzerPath
         {
             get
             {
                 if (!string.IsNullOrEmpty(m_ApkAnalyzerPath))
                     return m_ApkAnalyzerPath;
-                var fileName = "apkanalyzer";
-                if (Application.platform == RuntimePlatform.WindowsEditor)
-                    fileName += ".bat";
-
-                var cmdLineToolsDirectory = Utilities.Combine(SdkPath, "cmdline-tools");
-                if (Directory.Exists(cmdLineToolsDirectory))
-                {
-                    var files = Directory.GetFiles(cmdLineToolsDirectory, fileName, SearchOption.AllDirectories);
-                    if (files.Length > 0)
-                    {
-                        m_ApkAnalyzerPath = files[0];
-                        return m_ApkAnalyzerPath;
-                    }
-                }
-
-                m_ApkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", fileName);
+                m_ApkAnalyzerPath = GetApkAnalyzerPathFromSdk(SdkPath);
                 return m_ApkAnalyzerPath;
             }
-
         }
 
         private static string GuessToolPath(string nameKey, string toolName)
@@ -245,9 +248,7 @@ namespace Unity.BuildReportInspector.Mobile
                 {
                     throw new DirectoryNotFoundException($"ANDROID_SDK_ROOT environment variable not pointing to a valid Android SDK directory. Current value: {sdkEnv}");
                 }
-                apkAnalyzerPath = Utilities.Combine(sdkEnv, "cmdline-tools", "6.0", "bin", "apkanalyzer");
-                if (!File.Exists(apkAnalyzerPath) && !File.Exists(apkAnalyzerPath + ".bat"))
-                    apkAnalyzerPath = Utilities.Combine(sdkEnv, "tools", "bin", "apkanalyzer");
+                apkAnalyzerPath = GetApkAnalyzerPathFromSdk(sdkEnv);
             }
             else
             {
