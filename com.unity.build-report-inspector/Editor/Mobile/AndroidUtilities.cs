@@ -70,11 +70,16 @@ namespace Unity.BuildReportInspector.Mobile
                 var fileName = "apkanalyzer";
                 if (Application.platform == RuntimePlatform.WindowsEditor)
                     fileName += ".bat";
-                var files = Directory.GetFiles(Utilities.Combine(SdkPath, "cmdline-tools"), fileName, SearchOption.AllDirectories);
-                if (files.Length > 0)
+
+                var cmdLineToolsDirectory = Utilities.Combine(SdkPath, "cmdline-tools");
+                if (Directory.Exists(cmdLineToolsDirectory))
                 {
-                    m_ApkAnalyzerPath = files[0];
-                    return m_ApkAnalyzerPath;
+                    var files = Directory.GetFiles(cmdLineToolsDirectory, fileName, SearchOption.AllDirectories);
+                    if (files.Length > 0)
+                    {
+                        m_ApkAnalyzerPath = files[0];
+                        return m_ApkAnalyzerPath;
+                    }
                 }
 
                 m_ApkAnalyzerPath = Utilities.Combine(SdkPath, "tools", "bin", fileName);
