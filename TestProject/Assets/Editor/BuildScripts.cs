@@ -120,4 +120,42 @@ public class BuildScripts
         incrementalBuildReporter.DetectBuildResults();
         incrementalBuildReporter.ReportToConsole();
     }
+
+    [MenuItem("Build/Build AssetBundle - No TypeTree")]
+    public static void BuildAssetBundlesNoTypeTree()
+    {
+        BuildAssetBundlesWithOption("AssetBundle-NoTypeTree", BuildAssetBundleOptions.DisableWriteTypeTree);
+    }
+
+    [MenuItem("Build/Build AssetBundle - Strip Version and TypeTree")]
+    public static void BuildAssetBundlesNoTypeTreeNoVersion()
+    {
+        BuildAssetBundlesWithOption("AssetBundle-NoTypeTreeNoVersion",
+            BuildAssetBundleOptions.DisableWriteTypeTree | BuildAssetBundleOptions.AssetBundleStripUnityVersion);
+    }
+
+    public static void BuildAssetBundlesWithOption(string buildfolder, BuildAssetBundleOptions options)
+    {
+        var assetBundleDirectory = "Build/" + buildfolder;
+        if (!Directory.Exists(assetBundleDirectory))
+            Directory.CreateDirectory(assetBundleDirectory);
+
+        var bundleDefinitions = new AssetBundleBuild[]
+        {
+            new AssetBundleBuild()
+            {
+                assetBundleName = "Small.bundle",
+                assetNames = new string[] { "Assets/Assets/BasicScriptableObject.asset" },
+            },
+        };
+
+        var parameters = new BuildAssetBundlesParameters()
+        {
+            targetPlatform = EditorUserBuildSettings.activeBuildTarget,
+            outputPath = assetBundleDirectory,
+            options = options,
+            bundleDefinitions = bundleDefinitions
+        };
+        BuildPipeline.BuildAssetBundles(parameters);
+    }
 }
