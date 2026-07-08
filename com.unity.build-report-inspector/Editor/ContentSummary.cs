@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEngine;
 
 namespace Unity.BuildReportInspector
 {
     // Support code for generating a summary of content based on the PackedAsset information in the BuildReport.
     // These data types and calculations are kept separate from the UI and could be used in isolation (e.g. from scriptings)
+
+    // NOTE: Starting in Unity 6.6 this information is available directly inside the BuildReport, see
+    // https://docs.unity3d.com/6000.6/Documentation/ScriptReference/Build.Reporting.ContentSummary.html
 
     // Statistics for a specific type
     public class TypeStats
