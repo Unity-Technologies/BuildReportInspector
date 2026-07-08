@@ -25,6 +25,8 @@ Unity generates a BuildReport file for Player builds and AssetBundles. This pack
 
 This package is available as a preview and provided as-is. It serves as a demonstration of the BuildReport API capabilities and continues to work with recent Unity versions, including Unity 6.
 
+Starting in Unity 6.6 there is a built-in Build Analysis window that covers many of the same use cases as this package. See [New with Unity 6.6](com.unity.build-report-inspector/Documentation~/com.unity.build-report-inspector.md#new-with-unity-66) for when the built-in window is enough and when this package is still useful.
+
 ## Getting Started
 
 **Important:** The version on GitHub is more up to date than version 0.3 available through Unity Package Manager. We recommend installing directly from this repository to get the latest features and improvements.

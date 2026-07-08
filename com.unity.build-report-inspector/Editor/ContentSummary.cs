@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEngine;
 
 namespace Unity.BuildReportInspector
 {
     // Support code for generating a summary of content based on the PackedAsset information in the BuildReport.
     // These data types and calculations are kept separate from the UI and could be used in isolation (e.g. from scriptings)
+
+    // NOTE: Starting in Unity 6.6 this information is available directly inside the BuildReport, see
+    // https://docs.unity3d.com/6000.6/Documentation/ScriptReference/Build.Reporting.ContentSummary.html
 
     // Statistics for a specific type
     public class TypeStats
@@ -49,7 +53,6 @@ namespace Unity.BuildReportInspector
     {
         // Fields
         public int serializedFileCount = 0;
-        public int generatedFileCount = 0; // Number of serialized files and resource files that are created in this build
         public int resourceFileCount = 0;
         public int objectCount = 0;
         public int internalObjectCount = 0; // This is an object we cannot map back to an object in the project.
@@ -104,6 +107,16 @@ namespace Unity.BuildReportInspector
         private void CalculateStats(BuildReport report)
         {
             PackedAssets[] packedAssets = report.packedAssets;
+
+#if UNITY_6000_6_OR_NEWER
+            // Content directory builds have no PackedAssets. Starting in Unity 6.6 the same
+            // statistics are available directly in the BuildReport, so use those instead.
+            if (packedAssets.Length == 0 && report.contentSummary != null)
+            {
+                ReadStatsFromBuildReport(report.contentSummary);
+                return;
+            }
+#endif
 
             foreach(var packedAsset in packedAssets)
             {
@@ -171,6 +184,57 @@ namespace Unity.BuildReportInspector
             m_Stats.sortedTypeStats = m_Stats.statsPerType.Values.OrderByDescending(stats => stats.size).ToArray();
             m_Stats.sortedAssetStats = m_Stats.assetStats.Values.OrderByDescending(stats => stats.size).ToArray();
         }
+
+#if UNITY_6000_6_OR_NEWER
+        // Populate the statistics from the aggregated ContentSummary that Unity >=6.6 stores in the BuildReport,
+        // rather than walking the PackedAssets. Fields with no equivalent in the ContentSummary (e.g. the internal object count)
+        //  are left at their default values.
+        // The ContentSummary arrays are already sorted by size, so the sorted* arrays are populated in that order.
+        private void ReadStatsFromBuildReport(UnityEditor.Build.Reporting.ContentSummary contentSummary)
+        {
+            m_Stats.serializedFileCount = contentSummary.serializedFileCount;
+            m_Stats.resourceFileCount = contentSummary.resourceFileCount;
+            m_Stats.objectCount = contentSummary.objectCount;
+            m_Stats.totalSerializedFileSize = contentSummary.serializedFileSize;
+            m_Stats.totalHeaderSize = contentSummary.headerSize;
+            m_Stats.totalStreamingResourceSize = contentSummary.resourceDataSize;
+
+            var typeStats = contentSummary.typeStats;
+            m_Stats.sortedTypeStats = new TypeStats[typeStats.Length];
+            m_Stats.statsPerType.EnsureCapacity(typeStats.Length);
+            for (int i = 0; i < typeStats.Length; i++)
+            {
+                var source = typeStats[i];
+                var stats = new TypeStats
+                {
+                    type = source.type,
+                    size = source.size,
+                    objectCount = source.objectCount,
+                    streamingResourceCount = source.resourceCount,
+                };
+                m_Stats.sortedTypeStats[i] = stats;
+                m_Stats.statsPerType[stats.type] = stats;
+            }
+
+            var assetStats = contentSummary.assetStats;
+            m_Stats.sortedAssetStats = new AssetStats[assetStats.Length];
+            m_Stats.assetStats.EnsureCapacity(assetStats.Length);
+            for (int i = 0; i < assetStats.Length; i++)
+            {
+                var source = assetStats[i];
+                var stats = new AssetStats
+                {
+                    sourceAssetGUID = source.sourceAssetGUID,
+                    sourceAssetPath = source.sourceAssetPath,
+                    size = source.size,
+                    objectCount = source.objectCount,
+                    streamingResourceCount = source.resourceCount,
+                };
+                m_Stats.sortedAssetStats[i] = stats;
+                m_Stats.assetStats[stats.sourceAssetGUID] = stats;
+            }
+        }
+#endif
 
         private void UpdateTypeStats(TypeStats stats, PackedAssetInfo packedInfo, bool isStreamingResourceFile)
         {

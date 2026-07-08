@@ -6,6 +6,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using Unity.BuildReportInspector.Mobile.ZipUtility;
 
+// This suppresses this warning (until the code is reworked):
+// "BinaryFormatter is deprecated in the future .NET versions and may prevent assemblies from unloading or return incorrect results.
+// Please use UnityEngine.JsonUtility, System.Runtime.Serialization.DataContractSerializer or System.Text.Json.JsonSerializer instead."
+#pragma warning disable UAC0023
+
 namespace Unity.BuildReportInspector.Mobile
 {
     [Serializable]

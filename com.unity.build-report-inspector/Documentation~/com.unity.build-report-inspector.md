@@ -12,13 +12,20 @@ Note: The Addressables and Scriptable Build Pipeline packages do not generate a 
 
 ## Alternatives to using this package
 
-* The [Project Auditor package](https://docs.unity3d.com/Packages/com.unity.project-auditor@1.0/manual/build-view-reference.html) supports viewing the Build Report for the most recent Player Build.
+* The [Project Auditor package](https://docs.unity3d.com/Packages/com.unity.project-auditor@1.0/manual/build-view-reference.html) supports viewing the Build Report for the most recent Player Build (but not AssetBundle builds).
 
-* [UnityDataTools](https://github.com/Unity-Technologies/UnityDataTools/blob/main/Documentation/buildreport.md) supports importing a BuildReport into an sqlite database. This is recommended for looking at the information from very large builds.
+* [UnityDataTools](https://github.com/Unity-Technologies/UnityDataTools/blob/main/Documentation/buildreport.md) supports importing a BuildReport into an SQLite database. This is recommended for looking at the information from very large builds.
 
 * You can also write your own custom script to access data about your builds, using the [BuildReport](https://docs.unity3d.com/ScriptReference/Build.Reporting.BuildReport.html) scripting API
 
 * There are some widely used tools on the [Asset Store](https://assetstore.unity.com/).
+
+### New with Unity 6.6
+
+* There is now a built-in Build Analysis Window (Window -> Analysis -> Build Analysis) which shows information similar to the Build Report Inspector.  So in many cases it is not necessary to install this package anymore (but it continues to function).
+* Unity 6.6 automatically tracks older builds in the BuildHistory, including the BuildReport file.  This applies for Player builds and the new [content directory build](https://docs.unity3d.com/6000.6/Documentation/Manual/content-directories.html) feature.  AssetBundle builds continue to write the build to the `Library/LastBuild.buildreport` file.  See [build history](https://docs.unity3d.com/6000.6/Documentation/Manual/build-history.html) for more information.
+* The Build Report Inspector continues to be useful for viewing AssetBundle builds.  It also exposes extended information about Player builds that is not exposed in the new Build Analysis Window (for example the Source Asset information, stripping and scenes using assets).  So it can still be useful to install this package if you want to view that data for Player builds.
+* To use the Build Report Inspector with Unity 6.6 or later you can copy the Build Report files out of the `Library/BuildHistory` folder (for Player and content directory builds), or out of `Library/LastBuild.buildreport` (for AssetBundle builds) into your Asset folder, then inspect the asset by selecting it in the Project Window.
 
 ## Preview package
 This package is available as a preview.
